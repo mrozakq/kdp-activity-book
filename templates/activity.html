@@ -1,0 +1,538 @@
+{% extends "base.html" %}
+{% block title %}Activity Book{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <div class="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center text-xl">🧩</div>
+  <div>
+    <h1 class="text-2xl font-bold text-white">Activity Book</h1>
+    <p class="text-sm text-slate-400">Labirynty + Twoje kolorowanki w jednej książce KDP (300 DPI, bleed/trim)</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Form -->
+  <div class="card p-6 space-y-5">
+    <h2 class="font-semibold text-white">⚙️ Ustawienia</h2>
+
+    <!-- Mazes -->
+    <div class="rounded-xl p-4" style="background:#0c1a0e;border:1px solid #166534;">
+      <div class="font-semibold text-green-300 text-sm mb-3">🧩 Labirynty</div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_mazes" type="number" class="input text-sm py-1" value="10" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (10×15)</option>
+            <option value="medium" selected>Średnie (16×22)</option>
+            <option value="hard">Trudne (22×32)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Sudoku -->
+    <div class="rounded-xl p-4" style="background:#1a1a2e;border:1px solid #6366f1;">
+      <div class="font-semibold text-violet-300 text-sm mb-3">🔢 Sudoku</div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_sudoku" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Rozmiar</label>
+          <select id="sudoku_size" class="input text-sm py-1">
+            <option value="4x4" selected>4×4 (1-4)</option>
+            <option value="6x6">6×6 (1-6)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="sudoku_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (więcej liczb)</option>
+            <option value="medium" selected>Średnie</option>
+            <option value="hard">Trudne (mniej liczb)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tic-Tac-Toe -->
+    <div class="rounded-xl p-4" style="background:#2d1b1b;border:1px solid #b91c1c;">
+      <div class="font-semibold text-rose-300 text-sm mb-3">⭕ Kółko-krzyżyk</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba stron</label>
+          <input id="n_tictactoe" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Plansze na stronę</label>
+          <select id="tictactoe_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (4 duże)</option>
+            <option value="medium" selected>Średnie (6 plansz)</option>
+            <option value="hard">Trudne (9 małych)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Magic squares -->
+    <div class="rounded-xl p-4" style="background:#2e1a2e;border:1px solid #a21caf;">
+      <div class="font-semibold text-fuchsia-300 text-sm mb-3">✨ Magic Square</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_magic" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="magic_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (2 puste)</option>
+            <option value="medium" selected>Średnie (3 puste)</option>
+            <option value="hard">Trudne (5 pustych, 11-19)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dot grid -->
+    <div class="rounded-xl p-4" style="background:#1a2e2e;border:1px solid #0e7490;">
+      <div class="font-semibold text-cyan-300 text-sm mb-3">• Siatka kropek (do rysowania)</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_dotgrid" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Gęstość</label>
+          <select id="dotgrid_difficulty" class="input text-sm py-1">
+            <option value="easy">Rzadko (10×14)</option>
+            <option value="medium" selected>Standard (18×24)</option>
+            <option value="hard">Gęsto (28×38)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Counting -->
+    <div class="rounded-xl p-4" style="background:#2e2a1a;border:1px solid #ca8a04;">
+      <div class="font-semibold text-amber-300 text-sm mb-3">🔢 Ile jest? (counting)</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_counting" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="counting_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (5-10 obiektów)</option>
+            <option value="medium" selected>Średnie (10-18)</option>
+            <option value="hard">Trudne (18-30)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pattern completion -->
+    <div class="rounded-xl p-4" style="background:#1a2a2e;border:1px solid #0891b2;">
+      <div class="font-semibold text-sky-300 text-sm mb-3">🔁 Co dalej? (pattern)</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_pattern" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="pattern_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (AB, AAB)</option>
+            <option value="medium" selected>Średnie (+ABC)</option>
+            <option value="hard">Trudne (ABCD, AABB)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Symmetry -->
+    <div class="rounded-xl p-4" style="background:#2e1a2a;border:1px solid #be185d;">
+      <div class="font-semibold text-pink-300 text-sm mb-3">🪞 Dorysuj drugą połowę (symmetry)</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_symmetry" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="symmetry_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (dom, drzewo)</option>
+            <option value="medium" selected>Średnie (+ motyl)</option>
+            <option value="hard">Trudne (+ rakieta)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Color by number -->
+    <div class="rounded-xl p-4" style="background:#2a1a2e;border:1px solid #7c3aed;">
+      <div class="font-semibold text-purple-300 text-sm mb-3">🎨 Color by Number</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_cbn" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="cbn_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (serce, gwiazda)</option>
+            <option value="medium" selected>Średnie (+ ryba, kwiat)</option>
+            <option value="hard">Trudne (+ motyl, kot)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Path sums -->
+    <div class="rounded-xl p-4" style="background:#1a2e1f;border:1px solid #16a34a;">
+      <div class="font-semibold text-green-300 text-sm mb-3">➕ Sumowanie ścieżek</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_pathsum" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="pathsum_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (4×4, 1-5)</option>
+            <option value="medium" selected>Średnie (5×5, 1-7)</option>
+            <option value="hard">Trudne (6×6, 1-9)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Math maze -->
+    <div class="rounded-xl p-4" style="background:#2e1a1a;border:1px solid #dc2626;">
+      <div class="font-semibold text-red-300 text-sm mb-3">➗ Math Maze</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_mathmaze" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="mathmaze_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (5×5, even/odd)</option>
+            <option value="medium" selected>Średnie (6×6, ×2-5)</option>
+            <option value="hard">Trudne (7×7, ×3-6)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Word search -->
+    <div class="rounded-xl p-4" style="background:#1a2e1a;border:1px solid #16a34a;">
+      <div class="font-semibold text-emerald-300 text-sm mb-3">📝 Wykreślanka (krzyżówka)</div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="text-xs mb-0">Liczba</label>
+          <input id="n_wordsearch" type="number" class="input text-sm py-1" value="0" min="0" max="50"/>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Temat</label>
+          <select id="wordsearch_theme" class="input text-sm py-1">
+            <optgroup label="🇬🇧 English">
+              <option value="animals_en" selected>Animals</option>
+              <option value="fruits_en">Fruits</option>
+              <option value="colors_en">Colors</option>
+              <option value="family_en">Family</option>
+              <option value="school_en">School</option>
+            </optgroup>
+            <optgroup label="🇵🇱 Polski">
+              <option value="animals_pl">Zwierzęta</option>
+              <option value="fruits_pl">Owoce</option>
+              <option value="colors_pl">Kolory</option>
+              <option value="family_pl">Rodzina</option>
+              <option value="school_pl">Szkoła</option>
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Trudność</label>
+          <select id="wordsearch_difficulty" class="input text-sm py-1">
+            <option value="easy">Łatwe (10×10)</option>
+            <option value="medium" selected>Średnie (12×12)</option>
+            <option value="hard">Trudne (15×15)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>🎲 Seed</label>
+        <input id="seed" type="number" class="input" value="42" min="0" max="9999"/>
+      </div>
+      <div>
+        <label>📘 Tryb KDP</label>
+        <select id="kdp_mode" class="input">
+          <option value="true" selected>KDP (2625×3375, bleed)</option>
+          <option value="false">Standard (2550×3300)</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label>🎨 Twoje kolorowanki <span class="text-slate-500">(opcjonalne — zostaną dołączone naprzemiennie)</span></label>
+      <div class="upload-zone">
+        <input id="coloring_pages" type="file" accept="image/*" multiple class="hidden"/>
+        <div class="text-3xl mb-2">🎨</div>
+        <div class="upload-label text-slate-400 text-sm">Kliknij lub przeciągnij PNG/JPG</div>
+        <div class="text-xs text-slate-500 mt-1">Każda strona zostanie umieszczona przed kolejnym labiryntem</div>
+      </div>
+    </div>
+
+    <div id="error-msg" class="hidden bg-red-900/40 border border-red-700 text-red-300 rounded-lg p-3 text-sm"></div>
+
+    <button id="run-btn" onclick="runActivity()" class="btn-primary w-full text-base py-3">
+      🧩 Generuj Activity Book
+    </button>
+  </div>
+
+  <!-- Progress + results -->
+  <div class="space-y-4">
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-white">📟 Log</h2>
+        <div id="status-badge" class="hidden"></div>
+      </div>
+      <div id="terminal" class="terminal">Kliknij "Generuj Activity Book" aby rozpocząć...</div>
+    </div>
+
+    <div id="results-section" class="hidden card p-4 space-y-3">
+      <h2 class="font-semibold text-white">📦 Gotowe pliki</h2>
+      <div class="text-sm text-slate-400">Liczba stron: <span id="result-count" class="text-white font-medium"></span></div>
+      <div class="flex gap-2">
+        <button onclick="downloadZip()" class="btn-success flex-1">⬇️ Pobierz ZIP</button>
+        <button onclick="makeKdpPDF()" class="btn-primary flex-1">📘 Buduj KDP PDF</button>
+      </div>
+      <button onclick="cleanupFiles()" class="w-full text-sm py-2 rounded-lg border border-red-800 text-red-300 hover:bg-red-900/30">
+        🗑️ Usuń wygenerowane pliki z dysku
+      </button>
+      <div class="text-xs text-slate-500">Pobierz najpierw to czego potrzebujesz — usunięcie zwalnia katalog <code>results/</code>.</div>
+    </div>
+
+    <div id="pdf-section" class="hidden card p-4 space-y-2">
+      <h2 class="font-semibold text-white">📘 KDP PDF</h2>
+      <div id="pdf-terminal" class="terminal text-xs" style="min-height:120px;"></div>
+      <button id="dl-pdf-file" onclick="downloadPdf()" class="btn-success w-full hidden">⬇️ Pobierz KDP PDF</button>
+    </div>
+
+    <div id="book-section" class="hidden card p-4 space-y-3">
+      <h2 class="font-semibold text-white">📖 Buduj pełną książkę (title + copyright + intro + TOC + sections + answer key)</h2>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <label class="space-y-1">
+          <span class="text-slate-400">Tytuł</span>
+          <input id="book_title" class="input w-full" placeholder="My Activity Book"/>
+        </label>
+        <label class="space-y-1">
+          <span class="text-slate-400">Podtytuł</span>
+          <input id="book_subtitle" class="input w-full" placeholder="50 Fun Puzzles"/>
+        </label>
+        <label class="space-y-1">
+          <span class="text-slate-400">Autor <span class="text-rose-400">*</span></span>
+          <input id="book_author" class="input w-full" placeholder="Jane Doe" required/>
+        </label>
+        <label class="space-y-1">
+          <span class="text-slate-400">Wiek (np. 4-8)</span>
+          <input id="book_age_range" class="input w-full" value="4-8"/>
+        </label>
+        <label class="space-y-1">
+          <span class="text-slate-400">Rok</span>
+          <input id="book_year" class="input w-full" value="2026"/>
+        </label>
+      </div>
+      <button onclick="buildBook()" class="btn-primary w-full">📖 Buduj książkę PDF</button>
+      <div id="book-terminal" class="terminal text-xs hidden" style="min-height:120px;"></div>
+      <button id="dl-book-file" onclick="downloadBook()" class="btn-success w-full hidden">⬇️ Pobierz książkę PDF</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentJobId = null;
+let pdfJobId     = null;
+
+async function runActivity() {
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.add('hidden');
+
+  const fd = new FormData();
+  fd.append('n_mazes',              document.getElementById('n_mazes').value);
+  fd.append('difficulty',           document.getElementById('difficulty').value);
+  fd.append('n_sudoku',             document.getElementById('n_sudoku').value);
+  fd.append('sudoku_size',          document.getElementById('sudoku_size').value);
+  fd.append('sudoku_difficulty',    document.getElementById('sudoku_difficulty').value);
+  fd.append('n_wordsearch',         document.getElementById('n_wordsearch').value);
+  fd.append('wordsearch_theme',     document.getElementById('wordsearch_theme').value);
+  fd.append('wordsearch_difficulty',document.getElementById('wordsearch_difficulty').value);
+  fd.append('n_tictactoe',          document.getElementById('n_tictactoe').value);
+  fd.append('tictactoe_difficulty', document.getElementById('tictactoe_difficulty').value);
+  fd.append('n_magic',              document.getElementById('n_magic').value);
+  fd.append('magic_difficulty',     document.getElementById('magic_difficulty').value);
+  fd.append('n_dotgrid',            document.getElementById('n_dotgrid').value);
+  fd.append('dotgrid_difficulty',   document.getElementById('dotgrid_difficulty').value);
+  fd.append('n_counting',           document.getElementById('n_counting').value);
+  fd.append('counting_difficulty',  document.getElementById('counting_difficulty').value);
+  fd.append('n_pattern',            document.getElementById('n_pattern').value);
+  fd.append('pattern_difficulty',   document.getElementById('pattern_difficulty').value);
+  fd.append('n_symmetry',           document.getElementById('n_symmetry').value);
+  fd.append('symmetry_difficulty',  document.getElementById('symmetry_difficulty').value);
+  fd.append('n_cbn',                document.getElementById('n_cbn').value);
+  fd.append('cbn_difficulty',       document.getElementById('cbn_difficulty').value);
+  fd.append('n_pathsum',            document.getElementById('n_pathsum').value);
+  fd.append('pathsum_difficulty',   document.getElementById('pathsum_difficulty').value);
+  fd.append('n_mathmaze',           document.getElementById('n_mathmaze').value);
+  fd.append('mathmaze_difficulty',  document.getElementById('mathmaze_difficulty').value);
+  fd.append('seed',                 document.getElementById('seed').value);
+  fd.append('kdp_mode',             document.getElementById('kdp_mode').value);
+  const files = document.getElementById('coloring_pages').files;
+  for (const f of files) fd.append('coloring_pages', f);
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = '<span class="spinner"></span> Generuję...';
+  hideEl('results-section');
+  hideEl('pdf-section');
+  document.getElementById('terminal').textContent = '';
+  setHTML('status-badge','<span class="badge badge-running">⏳ Działa</span>');
+  showEl('status-badge');
+
+  const res = await fetch('/kdp/activity/run', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.error) {
+    errEl.textContent = data.error; errEl.classList.remove('hidden');
+    resetBtn(); return;
+  }
+  currentJobId = data.job_id;
+  startLog(data.job_id, 'terminal', onDone);
+}
+
+function resetBtn() {
+  const b = document.getElementById('run-btn');
+  b.disabled = false;
+  b.innerHTML = '🧩 Generuj Activity Book';
+}
+
+function onDone() {
+  resetBtn();
+  fetch('/job/' + currentJobId).then(r => r.json()).then(d => {
+    if (d.status === 'done') {
+      setHTML('status-badge', '<span class="badge badge-done">✅ Gotowe</span>');
+      setText('result-count', d.results_count);
+      showEl('results-section');
+      showEl('book-section');
+    } else {
+      setHTML('status-badge', '<span class="badge badge-error">❌ Błąd</span>');
+    }
+  });
+}
+
+let bookJobId = null;
+
+async function buildBook() {
+  showEl('book-terminal');
+  hideEl('dl-book-file');
+  const term = document.getElementById('book-terminal');
+  term.textContent = '⏳ Wysyłam żądanie...';
+  if (!currentJobId) {
+    term.textContent = '❌ Brak wygenerowanej książki. Najpierw kliknij „Generuj Activity Book".';
+    return;
+  }
+  const authorVal = (document.getElementById('book_author').value || '').trim();
+  if (!authorVal) {
+    term.textContent = '❌ Pole „Autor" jest wymagane — wpisz nazwę autora przed zbudowaniem książki.';
+    document.getElementById('book_author').focus();
+    return;
+  }
+  try {
+    const form = new FormData();
+    form.append('job_id',      currentJobId);
+    form.append('title',       document.getElementById('book_title').value || 'My Activity Book');
+    form.append('subtitle',    document.getElementById('book_subtitle').value || '');
+    form.append('author',      authorVal);
+    form.append('age_range',   document.getElementById('book_age_range').value || '3-5');
+    form.append('year',        document.getElementById('book_year').value || '2026');
+    form.append('description', '');
+    const res = await fetch('/kdp/activity/build_book', { method:'POST', body: form });
+    if (!res.ok) {
+      term.textContent = '❌ HTTP ' + res.status + ' — ' + (await res.text()).slice(0, 300);
+      return;
+    }
+    const data = await res.json();
+    if (data.error) {
+      term.textContent = '❌ ' + data.error;
+      return;
+    }
+    bookJobId = data.job_id;
+    term.textContent = '🚀 Job ' + bookJobId + ' uruchomiony, obserwuję logi...';
+    startLog(bookJobId, 'book-terminal', () => {
+      fetch('/job/' + bookJobId).then(r => r.json()).then(d => {
+        if (d.has_result) showEl('dl-book-file');
+      });
+    });
+  } catch (e) {
+    term.textContent = '❌ Wyjątek: ' + (e && e.message ? e.message : e);
+  }
+}
+
+function downloadBook() {
+  if (bookJobId) window.location.href = '/download/' + bookJobId;
+}
+
+function downloadZip() {
+  if (currentJobId) window.location.href = '/download/' + currentJobId;
+}
+
+async function makeKdpPDF() {
+  if (!currentJobId) return;
+  showEl('pdf-section');
+  hideEl('dl-pdf-file');
+  document.getElementById('pdf-terminal').textContent = '';
+
+  const res = await fetch('/kdp/activity/kdp_pdf/' + currentJobId, { method:'POST' });
+  const data = await res.json();
+  if (data.error) {
+    document.getElementById('pdf-terminal').textContent = '❌ ' + data.error;
+    return;
+  }
+  pdfJobId = data.job_id;
+  startLog(pdfJobId, 'pdf-terminal', () => {
+    fetch('/job/' + pdfJobId).then(r => r.json()).then(d => {
+      if (d.has_result) showEl('dl-pdf-file');
+    });
+  });
+}
+
+function downloadPdf() {
+  if (pdfJobId) window.location.href = '/download/' + pdfJobId;
+}
+
+async function cleanupFiles() {
+  const total = await cleanupJobs(currentJobId, pdfJobId);
+  if (total < 0) return;
+  hideEl('results-section');
+  hideEl('pdf-section');
+  hideEl('book-section');
+  setHTML('status-badge', `<span class="badge">🧹 Usunięto ${total} pozycji</span>`);
+  currentJobId = null;
+  pdfJobId = null;
+  bookJobId = null;
+}
+
+</script>
+{% endblock %}

@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Flashcard Bot{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <div class="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center text-xl">📚</div>
+  <div>
+    <h1 class="text-2xl font-bold text-white">Flashcard Bot</h1>
+    <p class="text-sm text-slate-400">Generuje karty edukacyjne dla KDP / Etsy / Teachers Pay Teachers — 1500×2100 px, 300 DPI</p>
+  </div>
+  <div class="ml-auto">
+    <a href="/sample/flashcard" class="btn-secondary text-sm">⬇️ Sample CSV</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Form -->
+  <div class="card p-6 space-y-5">
+    <h2 class="font-semibold text-white">⚙️ Dane i ustawienia</h2>
+
+    <!-- CSV upload -->
+    <div>
+      <label>📋 Plik CSV z danymi kart <span class="text-red-400">*</span></label>
+      <div class="upload-zone" id="csv-zone">
+        <input type="file" id="csv_file" accept=".csv" class="hidden"/>
+        <div class="text-2xl mb-1">📄</div>
+        <div class="upload-label text-slate-400 text-sm">Kliknij lub przeciągnij plik CSV</div>
+      </div>
+      <div class="mt-2 p-3 rounded-lg text-xs font-mono" style="background:#0f172a;color:#94a3b8;border:1px solid #334155;">
+        Kolumny: <span class="text-green-400">text_top, text_bottom, image_path</span><br/>
+        Przykład: <span class="text-slate-300">Hello, Cześć, cat.png</span>
+      </div>
+    </div>
+
+    <!-- Images -->
+    <div>
+      <label>🖼️ Obrazy do kart <span class="text-slate-500">(opcjonalne)</span></label>
+      <div class="upload-zone" id="img-zone">
+        <input type="file" id="images" accept="image/*" multiple class="hidden"/>
+        <div class="upload-label text-slate-400 text-sm">📁 Kliknij lub przeciągnij obrazy</div>
+        <div class="text-xs text-slate-500 mt-1">Nazwy plików muszą odpowiadać kolumnie image_path w CSV</div>
+      </div>
+    </div>
+
+    <!-- Color palette -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label class="mb-0">🎨 Paleta kolorów tła</label>
+        <label class="flex items-center gap-2 cursor-pointer mb-0">
+          <div class="relative">
+            <input type="checkbox" id="random_colors" checked class="sr-only peer"/>
+            <div class="w-10 h-5 bg-slate-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+            <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+          </div>
+          <span class="text-sm text-slate-400">Losowe kolory</span>
+        </label>
+      </div>
+      <div class="grid grid-cols-4 gap-2">
+        {% for color, name in colors %}
+        <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-slate-700 transition-colors">
+          <input type="checkbox" name="colors" value="{{ color }}" checked
+                 class="w-4 h-4 rounded accent-blue-500"/>
+          <div class="w-5 h-5 rounded-full border border-slate-600 flex-shrink-0"
+               style="background:{{ color }}"></div>
+          <span class="text-xs text-slate-400 truncate">{{ name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="error-msg" class="hidden bg-red-900/40 border border-red-700 text-red-300 rounded-lg p-3 text-sm"></div>
+
+    <button id="run-btn" onclick="runFlashcard()" class="btn-primary w-full">
+      📚 Generuj flashcardy
+    </button>
+  </div>
+
+  <!-- Log + Results -->
+  <div class="space-y-4">
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-white">📟 Log</h2>
+        <div id="status-badge" class="hidden"></div>
+      </div>
+      <div id="terminal" class="terminal">Kliknij "Generuj flashcardy" aby rozpocząć...</div>
+    </div>
+
+    <div id="results-section" class="hidden card p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold text-white">📦 Wyniki
+          <span id="result-count" class="text-green-400 text-sm ml-1"></span>
+        </h2>
+        <button onclick="downloadZip()" class="btn-success text-sm">⬇️ Pobierz ZIP</button>
+      </div>
+      <p class="text-sm text-slate-400">Flashcardy zostały wygenerowane i spakowane do archiwum ZIP.</p>
+      <div class="p-3 rounded-lg text-sm" style="background:#0f172a;border:1px solid #334155;">
+        <div class="text-slate-400">Rozmiar: <span class="text-white">1500 × 2100 px</span></div>
+        <div class="text-slate-400">DPI: <span class="text-white">300</span></div>
+        <div class="text-slate-400">Format: <span class="text-white">PNG</span></div>
+      </div>
+      <button onclick="cleanupFiles()" class="w-full text-sm py-2 rounded-lg border border-red-800 text-red-300 hover:bg-red-900/30">
+        🗑️ Usuń wygenerowane pliki z dysku
+      </button>
+    </div>
+
+    <!-- Color preview -->
+    <div class="card p-4">
+      <h2 class="font-semibold text-white mb-3 text-sm">🎨 Podgląd palety kolorów</h2>
+      <div class="grid grid-cols-4 gap-2">
+        {% for color, name in colors %}
+        <div class="rounded-xl h-16 flex items-end justify-center pb-2 text-xs font-medium text-white shadow-sm"
+             style="background:{{ color }};">
+          <span class="bg-black/30 px-1.5 py-0.5 rounded backdrop-blur-sm">{{ name }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- How to use -->
+    <div class="card p-4">
+      <h2 class="font-semibold text-white mb-2">📖 Jak używać</h2>
+      <ol class="list-decimal list-inside space-y-1 text-sm text-slate-400">
+        <li>Pobierz <a href="/sample/flashcard" class="text-blue-400 hover:underline">sample CSV</a> i uzupełnij danymi</li>
+        <li>Kolumna <code class="bg-slate-700 px-1 rounded">text_top</code> — tekst górny karty</li>
+        <li>Kolumna <code class="bg-slate-700 px-1 rounded">text_bottom</code> — tekst dolny karty</li>
+        <li>Kolumna <code class="bg-slate-700 px-1 rounded">image_path</code> — nazwa pliku obrazu (opcjonalna)</li>
+        <li>Wybierz kolory tła i kliknij "Generuj"</li>
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentJobId = null;
+
+async function runFlashcard() {
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.add('hidden');
+
+  const csvFile = document.getElementById('csv_file').files[0];
+  if (!csvFile) {
+    errEl.textContent = 'Prześlij plik CSV z danymi kart';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  const checkedColors = Array.from(document.querySelectorAll('input[name="colors"]:checked')).map(c => c.value);
+  if (!checkedColors.length) {
+    errEl.textContent = 'Wybierz co najmniej jeden kolor tła';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = '<span class="spinner"></span> Generuję...';
+  hideEl('results-section');
+  setHTML('status-badge', '<span class="badge badge-running">⏳ Działa</span>');
+  showEl('status-badge');
+
+  const fd = new FormData();
+  fd.append('csv_file', csvFile);
+  const imgs = document.getElementById('images').files;
+  for (const img of imgs) fd.append('images', img);
+  checkedColors.forEach(c => fd.append('colors', c));
+  fd.append('random_colors', document.getElementById('random_colors').checked ? 'true' : 'false');
+
+  const res = await fetch('/kdp/flashcard/run', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.error) {
+    errEl.textContent = data.error; errEl.classList.remove('hidden');
+    resetBtn(); return;
+  }
+
+  currentJobId = data.job_id;
+  startLog(data.job_id, 'terminal', onDone);
+}
+
+function onDone() {
+  resetBtn();
+  fetch('/job/' + currentJobId).then(r => r.json()).then(d => {
+    if (d.status === 'done') {
+      setHTML('status-badge', '<span class="badge badge-done">✅ Gotowe</span>');
+      setText('result-count', `(${d.results_count} kart)`);
+      showEl('results-section');
+    } else {
+      setHTML('status-badge', '<span class="badge badge-error">❌ Błąd</span>');
+    }
+  });
+}
+
+function downloadZip() {
+  if (currentJobId) window.location.href = '/download/' + currentJobId;
+}
+
+function resetBtn() {
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '📚 Generuj flashcardy';
+}
+
+async function cleanupFiles() {
+  const total = await cleanupJobs(currentJobId);
+  if (total < 0) return;
+  hideEl('results-section');
+  setHTML('status-badge', `<span class="badge">🧹 Usunięto ${total} pozycji</span>`);
+  currentJobId = null;
+}
+</script>
+{% endblock %}

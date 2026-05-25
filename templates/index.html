@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-white mb-1">Python Money Tools</h1>
+  <p class="text-slate-400">Interaktywny panel zarządzania narzędziami do zarabiania online</p>
+</div>
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  {% set total = namespace(done=0, err=0) %}
+  {% for t in tools %}
+    {% if last_runs[t.id] %}
+      {% if last_runs[t.id].status == 'done' %}{% set total.done = total.done + 1 %}{% endif %}
+      {% if last_runs[t.id].status == 'error' %}{% set total.err = total.err + 1 %}{% endif %}
+    {% endif %}
+  {% endfor %}
+  <div class="card p-4 flex items-center gap-3">
+    <span class="text-3xl">🛠️</span>
+    <div><div class="text-2xl font-bold text-white">{{ tools|length }}</div><div class="text-xs text-slate-400">Narzędzia</div></div>
+  </div>
+  <div class="card p-4 flex items-center gap-3">
+    <span class="text-3xl">✅</span>
+    <div><div class="text-2xl font-bold text-green-400">{{ total.done }}</div><div class="text-xs text-slate-400">Uruchomione</div></div>
+  </div>
+  <div class="card p-4 flex items-center gap-3">
+    <span class="text-3xl">❌</span>
+    <div><div class="text-2xl font-bold text-red-400">{{ total.err }}</div><div class="text-xs text-slate-400">Błędy</div></div>
+  </div>
+  <div class="card p-4 flex items-center gap-3">
+    <span class="text-3xl">📋</span>
+    <div>
+      <a href="/history" class="text-2xl font-bold text-blue-400 hover:underline">Historia</a>
+      <div class="text-xs text-slate-400">Wszystkie uruchomienia</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tool cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+{% for t in tools %}
+{% set lr = last_runs[t.id] %}
+{% set colors = {
+  'orange': 'from-orange-900/40 to-orange-800/20 border-orange-700/40',
+  'purple': 'from-purple-900/40 to-purple-800/20 border-purple-700/40',
+  'blue':   'from-blue-900/40 to-blue-800/20 border-blue-700/40',
+  'green':  'from-green-900/40 to-green-800/20 border-green-700/40',
+  'red':    'from-red-900/40 to-red-800/20 border-red-700/40',
+} %}
+{% set icon_bg = {
+  'orange': 'bg-orange-500/20 text-orange-400',
+  'purple': 'bg-purple-500/20 text-purple-400',
+  'blue':   'bg-blue-500/20 text-blue-400',
+  'green':  'bg-green-500/20 text-green-400',
+  'red':    'bg-red-500/20 text-red-400',
+} %}
+<div class="card bg-gradient-to-br {{ colors[t.color] }} flex flex-col hover:scale-[1.01] transition-transform">
+  <div class="p-5 flex-1">
+    <div class="flex items-start justify-between mb-3">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl {{ icon_bg[t.color] }}">
+        {{ t.icon }}
+      </div>
+      {% if lr %}
+        {% if lr.status == 'done' %}
+          <span class="badge badge-done">✅ Gotowe</span>
+        {% elif lr.status == 'error' %}
+          <span class="badge badge-error">❌ Błąd</span>
+        {% else %}
+          <span class="badge badge-running">⏳ Działa</span>
+        {% endif %}
+      {% else %}
+        <span class="badge" style="background:#1e293b;color:#64748b;border:1px solid #334155;">Nie uruchamiano</span>
+      {% endif %}
+    </div>
+    <h2 class="text-lg font-bold text-white mb-1">{{ t.name }}</h2>
+    <p class="text-sm text-slate-400 leading-relaxed mb-4">{{ t.desc }}</p>
+
+    {% if lr %}
+    <div class="text-xs text-slate-500 space-y-1">
+      <div>🕐 Ostatnie uruchomienie: <span class="text-slate-400">{{ lr.created_at }}</span></div>
+      {% if lr.results_count %}
+      <div>📦 Wyniki: <span class="text-slate-300 font-medium">{{ lr.results_count }}</span></div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="px-5 pb-5 flex gap-2">
+    <a href="{{ t.url }}" class="btn-primary flex-1 text-center text-sm">
+      ▶ Uruchom
+    </a>
+    <a href="{{ t.url }}" class="btn-secondary text-sm px-3">
+      ⚙️
+    </a>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+<!-- Quick-start guide -->
+<div class="mt-10 card p-6">
+  <h2 class="text-lg font-semibold text-white mb-4">🚀 Jak zacząć?</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+    <div class="flex gap-3">
+      <span class="text-blue-400 font-bold text-lg leading-none">1</span>
+      <div>
+        <div class="font-medium text-slate-200 mb-1">Amazon Parser</div>
+        <div class="text-slate-400">Zarejestruj konto na <strong>scrapeops.io</strong>, skopiuj API key i wklej słowa kluczowe.</div>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <span class="text-purple-400 font-bold text-lg leading-none">2</span>
+      <div>
+        <div class="font-medium text-slate-200 mb-1">Coloring Bot</div>
+        <div class="text-slate-400">Prześlij obrazy mandali i listę cytatów (CSV lub tekst). Wybierz czcionkę i generuj.</div>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <span class="text-green-400 font-bold text-lg leading-none">3</span>
+      <div>
+        <div class="font-medium text-slate-200 mb-1">Flashcard Bot</div>
+        <div class="text-slate-400">Przygotuj CSV z kolumnami <code class="bg-slate-700 px-1 rounded">text_top, text_bottom</code> i opcjonalnie obrazami.</div>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <span class="text-red-400 font-bold text-lg leading-none">4</span>
+      <div>
+        <div class="font-medium text-slate-200 mb-1">Keyword Parser</div>
+        <div class="text-slate-400">Dodaj konto AnswerThePublic, wpisz słowa kluczowe i wybierz silniki (Google/Bing/YT).</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

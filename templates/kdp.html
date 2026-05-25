@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}KDP Builder{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-xl">📘</div>
+  <div>
+    <h1 class="text-2xl font-bold text-white">KDP Builder</h1>
+    <p class="text-sm text-slate-400">Narzędzia do tworzenia materiałów pod Amazon KDP — kolorowanki, fiszki, okładki, kompletne książki</p>
+  </div>
+</div>
+
+{% set tiles = [
+  {'url': '/kdp/coloring', 'icon': '🎨', 'name': 'Coloring Bot',
+   'color': 'purple', 'desc': 'Generuj kolorowanki dla książek KDP'},
+  {'url': '/kdp/flashcard', 'icon': '📚', 'name': 'Flashcard Bot',
+   'color': 'green', 'desc': 'Generuj fiszki edukacyjne dla KDP'},
+  {'url': '/kdp/cover', 'icon': '📕', 'name': 'Cover Generator',
+   'color': 'red', 'desc': 'Generuj okładki książek KDP'},
+  {'url': '/kdp/builder', 'icon': '📘', 'name': 'Book Builder',
+   'color': 'blue', 'desc': 'Złóż kompletną książkę KDP jednym kliknięciem — 50 projektów + okładka'},
+  {'url': '/kdp/activity', 'icon': '🧩', 'name': 'Activity Book',
+   'color': 'orange', 'desc': 'Labirynty (+ Twoje kolorowanki) jako gotowa książka KDP'},
+] %}
+
+{% set colors = {
+  'orange': 'from-orange-900/40 to-orange-800/20 border-orange-700/40',
+  'purple': 'from-purple-900/40 to-purple-800/20 border-purple-700/40',
+  'blue':   'from-blue-900/40 to-blue-800/20 border-blue-700/40',
+  'green':  'from-green-900/40 to-green-800/20 border-green-700/40',
+  'red':    'from-red-900/40 to-red-800/20 border-red-700/40',
+} %}
+{% set icon_bg = {
+  'orange': 'bg-orange-500/20 text-orange-400',
+  'purple': 'bg-purple-500/20 text-purple-400',
+  'blue':   'bg-blue-500/20 text-blue-400',
+  'green':  'bg-green-500/20 text-green-400',
+  'red':    'bg-red-500/20 text-red-400',
+} %}
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+{% for t in tiles %}
+<div class="card bg-gradient-to-br {{ colors[t.color] }} flex flex-col hover:scale-[1.01] transition-transform">
+  <div class="p-5 flex-1">
+    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl {{ icon_bg[t.color] }} mb-3">
+      {{ t.icon }}
+    </div>
+    <h2 class="text-lg font-bold text-white mb-1">{{ t.name }}</h2>
+    <p class="text-sm text-slate-400 leading-relaxed mb-4">{{ t.desc }}</p>
+  </div>
+  <div class="px-5 pb-5">
+    <a href="{{ t.url }}" class="btn-primary w-full text-center text-sm block">
+      ▶ Otwórz
+    </a>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

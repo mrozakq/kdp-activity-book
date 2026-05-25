@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Historia uruchomień{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <div class="w-10 h-10 bg-slate-500/20 rounded-xl flex items-center justify-center text-xl">📋</div>
+  <div>
+    <h1 class="text-2xl font-bold text-white">Historia uruchomień</h1>
+    <p class="text-sm text-slate-400">Ostatnie 100 uruchomień wszystkich narzędzi</p>
+  </div>
+</div>
+
+<!-- Summary stats -->
+{% set counts = {} %}
+{% for run in runs %}
+  {% set tool = run.tool_name %}
+{% endfor %}
+
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+  {% set tool_icons = {'amazon':'🛒','coloring':'🎨','comparison':'📊','flashcard':'📚','pinterest':'📌','tiktok':'🎵'} %}
+  {% for tool_id, icon in tool_icons.items() %}
+  {% set tool_runs = runs | selectattr('tool_name', 'equalto', tool_id) | list %}
+  <div class="card p-3 text-center">
+    <div class="text-2xl mb-1">{{ icon }}</div>
+    <div class="text-lg font-bold text-white">{{ tool_runs | length }}</div>
+    <div class="text-xs text-slate-500 capitalize">{{ tool_id }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Runs table -->
+<div class="card overflow-hidden">
+  {% if runs %}
+  <div class="overflow-x-auto">
+    <table>
+      <thead>
+        <tr>
+          <th class="w-12">#</th>
+          <th>Narzędzie</th>
+          <th>Parametry</th>
+          <th>Status</th>
+          <th>Wyniki</th>
+          <th>Data</th>
+          <th>Log</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        {% set tool_icons = {'amazon':'🛒','coloring':'🎨','comparison':'📊','flashcard':'📚','pinterest':'📌','tiktok':'🎵'} %}
+        <tr>
+          <td class="text-slate-500 text-xs">{{ run.id }}</td>
+          <td>
+            <a href="/{{ run.tool_name if run.tool_name != 'tiktok' else 'pinterest' }}"
+               class="flex items-center gap-2 hover:text-blue-400 transition-colors">
+              <span>{{ tool_icons.get(run.tool_name, '🔧') }}</span>
+              <span class="font-medium text-slate-200 capitalize">{{ run.tool_name }}</span>
+            </a>
+          </td>
+          <td class="text-xs text-slate-400 max-w-xs">
+            {% if run.params_json %}
+              {% set params = run.params_json | tojson %}
+              <span class="truncate block max-w-[200px]" title="{{ run.params_json }}">
+                {{ run.params_json[:80] }}{% if run.params_json | length > 80 %}…{% endif %}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if run.status == 'done' %}
+              <span class="badge badge-done">✅ Gotowe</span>
+            {% elif run.status == 'error' %}
+              <span class="badge badge-error">❌ Błąd</span>
+            {% else %}
+              <span class="badge badge-running">⏳ {{ run.status }}</span>
+            {% endif %}
+          </td>
+          <td class="text-slate-300 font-medium">
+            {{ run.results_count if run.results_count else '—' }}
+          </td>
+          <td class="text-xs text-slate-500 whitespace-nowrap">{{ run.created_at }}</td>
+          <td>
+            {% if run.output_log %}
+            <button onclick="toggleLog({{ run.id }})"
+                    class="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+              📄 Pokaż
+            </button>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% if run.output_log %}
+        <tr id="log-{{ run.id }}" class="hidden">
+          <td colspan="7" class="p-0">
+            <div class="terminal text-xs max-h-48 m-2 rounded-lg">{{ run.output_log }}</div>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="flex flex-col items-center justify-center py-16 text-slate-500">
+    <span class="text-5xl mb-4">📭</span>
+    <p class="text-lg font-medium text-slate-400">Brak historii uruchomień</p>
+    <p class="text-sm mt-1">Uruchom dowolne narzędzie aby zobaczyć historię</p>
+    <a href="/" class="btn-primary mt-4 text-sm">🏠 Wróć do dashboardu</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if runs %}
+<p class="text-xs text-slate-600 mt-3 text-right">Pokazano {{ runs | length }} wpisów</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleLog(id) {
+  const row = document.getElementById('log-' + id);
+  if (row) row.classList.toggle('hidden');
+}
+</script>
+{% endblock %}

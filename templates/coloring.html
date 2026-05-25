@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% block title %}Coloring Bot{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-xl">🎨</div>
+  <div>
+    <h1 class="text-2xl font-bold text-white">Coloring Bot</h1>
+    <p class="text-sm text-slate-400">Generuje strony do kolorowania (coloring pages) dla KDP/Etsy — 2550×3300 px, 300 DPI</p>
+  </div>
+  <div class="ml-auto flex gap-2">
+    <a href="/sample/coloring" class="btn-secondary text-sm">⬇️ Sample CSV</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Form -->
+  <div class="card p-6 space-y-5">
+    <h2 class="font-semibold text-white">⚙️ Ustawienia</h2>
+
+    <!-- Images upload -->
+    <div>
+      <label>🖼️ Obrazy mandali / tła <span class="text-red-400">*</span></label>
+      <div class="upload-zone" id="img-zone">
+        <input type="file" id="images" accept="image/*" multiple class="hidden"/>
+        <div class="text-3xl mb-2">🖼️</div>
+        <div class="upload-label text-slate-400 text-sm">Kliknij lub przeciągnij obrazy (PNG/JPG)</div>
+        <div class="text-xs text-slate-500 mt-1">Obsługiwane: PNG, JPG, JPEG</div>
+      </div>
+    </div>
+
+    <!-- Quotes -->
+    <div>
+      <label>💬 Cytaty — plik CSV <span class="text-slate-500">(kolumna "quote")</span></label>
+      <div class="upload-zone" id="csv-zone">
+        <input type="file" id="quotes_csv" accept=".csv" class="hidden"/>
+        <div class="upload-label text-slate-400 text-sm">📄 Kliknij aby wybrać plik CSV</div>
+      </div>
+    </div>
+    <div>
+      <label>💬 lub wpisz cytaty ręcznie <span class="text-slate-500">(jeden na linię)</span></label>
+      <textarea id="quotes_text" class="input text-sm font-mono" rows="5"
+        placeholder="Be the change you wish to see&#10;In every walk with nature...&#10;The secret of getting ahead..."></textarea>
+    </div>
+
+    <!-- Font & style -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>🔤 Czcionka</label>
+        <select id="font" class="input">
+          <option value="random">🎲 Losowa</option>
+          {% for f in fonts %}
+          <option value="{{ f }}">{{ f }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>📏 Rozmiar czcionki</label>
+        <input id="font_size" type="number" class="input" value="350" min="100" max="800"/>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <label>🎨 Kolor tekstu</label>
+        <div class="flex gap-2 items-center">
+          <input id="text_color" type="color" value="#ffffff" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0"/>
+          <input id="text_color_hex" class="input text-sm" value="#ffffff"/>
+        </div>
+      </div>
+      <div>
+        <label>🖊️ Kolor obrysu</label>
+        <div class="flex gap-2 items-center">
+          <input id="stroke_color" type="color" value="#000000" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0"/>
+          <input id="stroke_color_hex" class="input text-sm" value="#000000"/>
+        </div>
+      </div>
+      <div>
+        <label>📐 Grubość obrysu</label>
+        <input id="stroke_width" type="number" class="input" value="20" min="0" max="80"/>
+      </div>
+    </div>
+
+    <div id="error-msg" class="hidden bg-red-900/40 border border-red-700 text-red-300 rounded-lg p-3 text-sm"></div>
+
+    <!-- 50-Design Book Mode -->
+    <div class="rounded-xl p-4 space-y-3" style="background:#0c1a0e;border:1px solid #166534;">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-semibold text-green-300 text-sm">📗 Tryb 50-Design KDP Book (100 stron)</div>
+          <div class="text-xs text-slate-400 mt-0.5">50 projektów × 5 kategorii, 50 cytatów, proceduralne tła, gutter 0.625"</div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <div class="relative">
+            <input type="checkbox" id="book_mode_50" class="sr-only peer"/>
+            <div class="w-10 h-5 bg-slate-600 rounded-full peer-checked:bg-green-600 transition-colors"></div>
+            <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+          </div>
+        </label>
+      </div>
+      <div id="book50-info" class="hidden text-xs text-slate-400 space-y-1 pt-1">
+        <div class="grid grid-cols-2 gap-2">
+          <div>🌸 Kat. A (1-10): Floral Mandala</div>
+          <div>📐 Kat. B (11-20): Geometric Mandala</div>
+          <div>🌿 Kat. C (21-30): Botanical / Nature</div>
+          <div>☯️ Kat. D (31-40): Zen Tangle</div>
+          <div>💐 Kat. E (41-50): Floral Bouquet</div>
+          <div>📄 PDF: 100 stron (50 + 50 pustych)</div>
+        </div>
+        <div class="text-yellow-400 mt-1">⚡ Tła generowane proceduralnie — wgrywanie obrazów niewymagane</div>
+      </div>
+    </div>
+
+    <!-- KDP Mode -->
+    <div class="rounded-xl p-4 space-y-3" style="background:#0c1a2e;border:1px solid #1e40af;">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-semibold text-blue-300 text-sm">📚 Tryb KDP (Amazon Kindle Direct Publishing)</div>
+          <div class="text-xs text-slate-400 mt-0.5">Grayscale, bleed 0.125", safe zone, PDF z pustymi stronami</div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <div class="relative">
+            <input type="checkbox" id="kdp_mode" class="sr-only peer"/>
+            <div class="w-10 h-5 bg-slate-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+            <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+          </div>
+        </label>
+      </div>
+      <div id="kdp-options" class="hidden grid grid-cols-2 gap-3 pt-1">
+        <div>
+          <label class="mb-0 text-xs">Tryb B&W</label>
+          <select id="bw_mode" class="input text-sm py-1">
+            <option value="L">Grayscale (L) — polecane dla foto-mandali</option>
+            <option value="1">Pure B&W (1-bit) — dla line art</option>
+          </select>
+        </div>
+        <div class="text-xs text-slate-400 space-y-1 pt-1">
+          <div>✅ Rozmiar: 2625×3375px (z bleedem)</div>
+          <div>✅ Tryb: grayscale / pure B&W</div>
+          <div>✅ Puste strony: tak</div>
+          <div>✅ TrimBox / BleedBox: tak</div>
+        </div>
+      </div>
+    </div>
+
+    <button id="run-btn" onclick="runColoring()" class="btn-primary w-full">
+      🎨 Generuj obrazy
+    </button>
+  </div>
+
+  <!-- Log + Results -->
+  <div class="space-y-4">
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-white">📟 Log</h2>
+        <div id="status-badge" class="hidden"></div>
+      </div>
+      <div id="terminal" class="terminal">Kliknij "Generuj obrazy" aby rozpocząć...</div>
+    </div>
+
+    <div id="results-section" class="hidden card p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold text-white">📦 Wyniki
+          <span id="result-count" class="text-purple-400 text-sm ml-1"></span>
+        </h2>
+        <div class="flex gap-2 flex-wrap justify-end">
+          <button id="dl-zip" onclick="downloadZip()" class="btn-success text-sm">⬇️ ZIP</button>
+          <button id="dl-pdf" onclick="mergePDF()" class="btn-secondary text-sm">📄 Scal PDF</button>
+          <button id="dl-kdp" onclick="makeKdpPDF()" class="text-sm px-3 py-2 rounded-lg font-semibold transition-colors"
+                  style="background:#1e3a8a;color:#93c5fd;border:1px solid #3b82f6;">
+            📚 KDP PDF
+          </button>
+        </div>
+      </div>
+      <p class="text-sm text-slate-400">Obrazy wygenerowane i spakowane do ZIP.</p>
+
+      <!-- Standard PDF -->
+      <div id="pdf-section" class="hidden">
+        <p class="text-xs text-slate-500 mb-1">📄 Scal PDF (standardowy):</p>
+        <div id="pdf-terminal" class="terminal h-24"></div>
+        <button id="dl-pdf-file" class="hidden btn-success text-sm mt-2">⬇️ Pobierz PDF</button>
+      </div>
+
+      <!-- KDP PDF -->
+      <div id="kdp-section" class="hidden rounded-xl p-3 space-y-2" style="background:#0c1a2e;border:1px solid #1e40af;">
+        <p class="text-xs text-blue-300 font-medium">📚 KDP PDF — Amazon Kindle Direct Publishing:</p>
+        <div id="kdp-terminal" class="terminal h-36"></div>
+        <div id="kdp-specs" class="hidden grid grid-cols-2 gap-2 text-xs text-slate-400 pt-1">
+          <div>📐 MediaBox: 8.75" × 11.25"</div>
+          <div>✂️ TrimBox: 8.5" × 11"</div>
+          <div>🩸 Bleed: 0.125" each side</div>
+          <div>🖤 Tryb: grayscale/B&W</div>
+        </div>
+        <button id="dl-kdp-file" class="hidden btn-success text-sm">⬇️ Pobierz KDP PDF</button>
+      </div>
+
+      <button onclick="cleanupFiles()" class="w-full text-sm py-2 rounded-lg border border-red-800 text-red-300 hover:bg-red-900/30">
+        🗑️ Usuń wygenerowane pliki z dysku
+      </button>
+    </div>
+
+    <!-- How to use -->
+    <div class="card p-4">
+      <h2 class="font-semibold text-white mb-2">📖 Jak używać</h2>
+      <ol class="list-decimal list-inside space-y-1 text-sm text-slate-400">
+        <li>Prześlij 1–5 obrazów mandali lub innych tła (PNG/JPG)</li>
+        <li>Dodaj cytaty — CSV z kolumną <code class="bg-slate-700 px-1 rounded">quote</code> lub wpisz ręcznie</li>
+        <li>Wybierz czcionkę, rozmiar i kolory tekstu</li>
+        <li>Pobierz ZIP z gotowymi stronami (8.5×11 cali, 300 DPI)</li>
+        <li>Opcjonalnie scal wszystkie PNG do jednego PDF</li>
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentJobId = null;
+let pdfJobId = null;
+let kdpJobId  = null;
+
+// Book 50 toggle
+document.getElementById('book_mode_50').addEventListener('change', e => {
+  document.getElementById('book50-info').classList.toggle('hidden', !e.target.checked);
+  if (e.target.checked) {
+    // Force KDP mode on
+    document.getElementById('kdp_mode').checked = true;
+    document.getElementById('kdp-options').classList.remove('hidden');
+    document.getElementById('run-btn').innerHTML = '📗 Generuj 50-Design KDP Book';
+  } else {
+    document.getElementById('run-btn').innerHTML = '🎨 Generuj obrazy';
+  }
+});
+
+// KDP toggle
+document.getElementById('kdp_mode').addEventListener('change', e => {
+  document.getElementById('kdp-options').classList.toggle('hidden', !e.target.checked);
+});
+
+// Sync color pickers with hex inputs
+['text_color','stroke_color'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e => {
+    document.getElementById(id+'_hex').value = e.target.value;
+  });
+  document.getElementById(id+'_hex').addEventListener('input', e => {
+    const v = e.target.value;
+    if (/^#[0-9a-f]{6}$/i.test(v)) document.getElementById(id).value = v;
+  });
+});
+
+async function runColoring() {
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.add('hidden');
+
+  const book50 = document.getElementById('book_mode_50').checked;
+  const images = document.getElementById('images').files;
+  if (!images.length && !book50) { errEl.textContent='Prześlij co najmniej jeden obraz'; errEl.classList.remove('hidden'); return; }
+
+  const quotesCSV = document.getElementById('quotes_csv').files[0];
+  const quotesText = document.getElementById('quotes_text').value.trim();
+  if (!quotesCSV && !quotesText && !book50) {
+    errEl.textContent='Podaj cytaty (w polu tekstowym lub pliku CSV)'; errEl.classList.remove('hidden'); return;
+  }
+
+  const kdpMode = document.getElementById('kdp_mode').checked;
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = '<span class="spinner"></span> Generuję...';
+  hideEl('results-section');
+  hideEl('pdf-section');
+  hideEl('kdp-section');
+  setHTML('status-badge', book50
+    ? '<span class="badge" style="background:#14532d;color:#86efac;border:1px solid #22c55e;">📗 50-Design...</span>'
+    : kdpMode
+    ? '<span class="badge" style="background:#1e3a8a;color:#93c5fd;border:1px solid #3b82f6;">📚 KDP...</span>'
+    : '<span class="badge badge-running">⏳ Działa</span>');
+  showEl('status-badge');
+
+  const fd = new FormData();
+  for (const img of images) fd.append('images', img);
+  if (quotesCSV) fd.append('quotes_csv', quotesCSV);
+  fd.append('quotes', quotesText);
+  fd.append('font', document.getElementById('font').value);
+  fd.append('font_size', document.getElementById('font_size').value);
+  fd.append('text_color', document.getElementById('text_color').value);
+  fd.append('stroke_color', document.getElementById('stroke_color').value);
+  fd.append('stroke_width', document.getElementById('stroke_width').value);
+  fd.append('kdp_mode', kdpMode ? 'true' : 'false');
+  fd.append('bw_mode', document.getElementById('bw_mode')?.value || 'L');
+  fd.append('book_mode_50', book50 ? 'true' : 'false');
+
+  const res = await fetch('/kdp/coloring/run', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.error) {
+    errEl.textContent = data.error; errEl.classList.remove('hidden');
+    resetBtn(); return;
+  }
+
+  currentJobId = data.job_id;
+  startLog(data.job_id, 'terminal', onDone);
+}
+
+function onDone() {
+  resetBtn();
+  fetch('/job/' + currentJobId).then(r=>r.json()).then(d => {
+    if (d.status === 'done') {
+      setHTML('status-badge','<span class="badge badge-done">✅ Gotowe</span>');
+      setText('result-count', `(${d.results_count} obrazów)`);
+      showEl('results-section');
+      // Auto-show KDP button only if KDP mode was on
+      if (document.getElementById('kdp_mode').checked) {
+        document.getElementById('dl-kdp').style.animation = 'none';
+        document.getElementById('dl-kdp').style.background = '#1d4ed8';
+      }
+    } else {
+      setHTML('status-badge','<span class="badge badge-error">❌ Błąd</span>');
+    }
+  });
+}
+
+function downloadZip() {
+  if (currentJobId) window.location.href = '/download/' + currentJobId;
+}
+
+async function mergePDF() {
+  if (!currentJobId) return;
+  showEl('pdf-section');
+  hideEl('kdp-section');
+  document.getElementById('pdf-terminal').textContent = '';
+  hideEl('dl-pdf-file');
+  const res = await fetch('/kdp/coloring/merge_pdf/' + currentJobId, { method:'POST' });
+  const data = await res.json();
+  pdfJobId = data.job_id;
+  startLog(pdfJobId, 'pdf-terminal', () => {
+    fetch('/job/' + pdfJobId).then(r=>r.json()).then(d => {
+      if (d.has_result) {
+        showEl('dl-pdf-file');
+        document.getElementById('dl-pdf-file').onclick = () =>
+          window.location.href = '/download/' + pdfJobId;
+      }
+    });
+  });
+}
+
+async function makeKdpPDF() {
+  if (!currentJobId) return;
+  showEl('kdp-section');
+  hideEl('pdf-section');
+  hideEl('dl-kdp-file');
+  hideEl('kdp-specs');
+  document.getElementById('kdp-terminal').textContent = '';
+
+  const res = await fetch('/kdp/coloring/kdp_pdf/' + currentJobId, { method:'POST' });
+  const data = await res.json();
+  if (data.error) {
+    document.getElementById('kdp-terminal').textContent = '❌ ' + data.error;
+    return;
+  }
+  kdpJobId = data.job_id;
+  startLog(kdpJobId, 'kdp-terminal', () => {
+    fetch('/job/' + kdpJobId).then(r=>r.json()).then(d => {
+      showEl('kdp-specs');
+      if (d.has_result) {
+        showEl('dl-kdp-file');
+        document.getElementById('dl-kdp-file').onclick = () =>
+          window.location.href = '/download/' + kdpJobId;
+      }
+    });
+  });
+}
+
+function resetBtn() {
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '🎨 Generuj obrazy';
+}
+
+async function cleanupFiles() {
+  const total = await cleanupJobs(currentJobId, pdfJobId, kdpJobId);
+  if (total < 0) return;
+  hideEl('results-section');
+  hideEl('pdf-section');
+  hideEl('kdp-section');
+  setHTML('status-badge', `<span class="badge">🧹 Usunięto ${total} pozycji</span>`);
+  currentJobId = null;
+  pdfJobId = null;
+  kdpJobId = null;
+}
+</script>
+{% endblock %}

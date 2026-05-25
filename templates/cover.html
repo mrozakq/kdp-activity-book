@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% block title %}Cover Generator{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <div class="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center text-xl">📗</div>
+  <div>
+    <h1 class="text-2xl font-bold text-white">KDP Cover Generator</h1>
+    <p class="text-sm text-slate-400">Generuje okładkę KDP (tył + grzbiet + przód) jako jeden PDF — 300 DPI, RGB, TrimBox/BleedBox</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Form -->
+  <div class="card p-6 space-y-5">
+    <h2 class="font-semibold text-white">⚙️ Ustawienia</h2>
+
+    <!-- Book-type preset (FIRST field — auto-fills the copy below) -->
+    <div>
+      <label>📚 Typ książki <span class="text-slate-500">(auto-uzupełnia teksty — można potem edytować)</span></label>
+      <select id="book_type" class="input" onchange="applyPreset()">
+        <option value="kids_activity">Kids Activity Book (3-5)</option>
+        <option value="kids_coloring">Kids Coloring Book (4-8)</option>
+        <option value="adult_coloring">Adult Coloring Book</option>
+        <option value="adult_puzzle">Adult Puzzle Book</option>
+      </select>
+    </div>
+
+    <!-- Cover mode toggle -->
+    <div>
+      <label>🎭 Tryb okładki</label>
+      <div class="flex gap-2 mt-1">
+        <label class="flex-1 cursor-pointer">
+          <input type="radio" name="cover_mode" value="adult" class="hidden peer" checked
+                 onchange="updateMode()"/>
+          <div class="border border-slate-700 rounded-lg p-3 text-center peer-checked:border-pink-500 peer-checked:bg-pink-500/10">
+            <div class="text-lg">🧘</div>
+            <div class="text-xs">Adult (mindfulness)</div>
+          </div>
+        </label>
+        <label class="flex-1 cursor-pointer">
+          <input type="radio" name="cover_mode" value="kids" class="hidden peer"
+                 onchange="updateMode()"/>
+          <div class="border border-slate-700 rounded-lg p-3 text-center peer-checked:border-yellow-400 peer-checked:bg-yellow-400/10">
+            <div class="text-lg">🧒</div>
+            <div class="text-xs">Kids (preschool)</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Title / Subtitle / Author -->
+    <div class="grid grid-cols-1 gap-3">
+      <div>
+        <label>📖 Tytuł <span class="text-red-400">*</span></label>
+        <input id="title" class="input" placeholder="Mindful Moments" value="Mindful Moments"/>
+      </div>
+      <div>
+        <label>💬 Podtytuł <span class="text-red-400">*</span></label>
+        <input id="subtitle" class="input" placeholder="50 Mindful Designs for Stress Relief"
+               value="50 Mindful Designs for Stress Relief"/>
+      </div>
+      <div>
+        <label>✍️ Autor <span class="text-slate-500">(opcjonalne — puste = białe pole do podpisu)</span></label>
+        <input id="author" class="input" placeholder="lub zostaw puste" value=""/>
+      </div>
+    </div>
+
+    <!-- Pages & Paper -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>📄 Liczba stron wnętrza</label>
+        <input id="pages" type="number" class="input" value="100" min="24" max="800"
+               oninput="updateSpineInfo()"/>
+      </div>
+      <div>
+        <label>📋 Typ papieru</label>
+        <select id="paper" class="input" onchange="updateSpineInfo()">
+          <option value="white">White (0.002252"/stronę)</option>
+          <option value="cream">Cream (0.0025"/stronę)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Spine info -->
+    <div id="spine-info" class="text-xs text-slate-400 bg-slate-800 rounded-lg p-2 font-mono"></div>
+
+    <!-- Palette & Seed -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>🎨 Paleta kolorów</label>
+        <select id="palette" class="input">
+          <optgroup label="Adult (mindfulness)" id="palette-adult-group">
+            {% for p in palettes %}
+            <option value="{{ p }}" data-mode="adult">{{ p|capitalize }}</option>
+            {% endfor %}
+          </optgroup>
+          <optgroup label="Kids (preschool)" id="palette-kids-group">
+            {% for p in kids_palettes %}
+            <option value="{{ p }}" data-mode="kids">{{ p|capitalize }}</option>
+            {% endfor %}
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <label>🎲 Seed tła</label>
+        <input id="seed" type="number" class="input" value="42" min="0" max="9999"/>
+      </div>
+    </div>
+
+    <!-- Kids-only fields -->
+    <div id="kids-fields" class="hidden space-y-3 border border-yellow-500/30 rounded-lg p-3 bg-yellow-500/5">
+      <div class="text-xs text-yellow-300 font-semibold">🧒 Opcje Kids</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label>🏙️ Motyw tła</label>
+          <select id="bg_theme" class="input">
+            {% for t in kids_themes %}
+            <option value="{{ t }}">{{ t|replace('_', ' ')|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>🏷️ Badge (np. AGES 3-5)</label>
+          <input id="badge_text" class="input" placeholder="AGES 3-5" value="AGES 3-5"/>
+        </div>
+      </div>
+      <div>
+        <label>📢 CTA (nad strefą kodu)</label>
+        <input id="cta_text" class="input" placeholder="Perfect for travel, rainy days &amp; quiet time"
+               value="Perfect for travel, rainy days &amp; quiet time"/>
+      </div>
+      <div>
+        <label>🧸 Maskotka <span class="text-slate-500">(opcjonalne — PNG przezroczyste)</span></label>
+        <div class="upload-zone" id="mascot-zone">
+          <input type="file" id="mascot" accept="image/*" class="hidden"/>
+          <div class="upload-label text-slate-400 text-xs">Kliknij aby wybrać maskotkę</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hook line -->
+    <div>
+      <label>🎯 Hook (tylna okładka — nagłówek)</label>
+      <input id="hook" class="input" placeholder="42 Fun Activities to Spark Your Child's Imagination!"
+             value="42 Fun Activities to Spark Your Child's Imagination!"/>
+    </div>
+
+    <!-- Tagline -->
+    <div>
+      <label>🏷️ Tagline (pod kodem kreskowym)</label>
+      <input id="tagline" class="input" value="Activity Book · Ages 3-5 · 100 Activities · 8.5 × 11 inches"/>
+    </div>
+
+
+    <!-- Author bio -->
+    <div>
+      <label>👤 Bio autora <span class="text-slate-500">(opcjonalne)</span></label>
+      <textarea id="author_bio" class="input text-sm" rows="2"
+        placeholder="Krótki opis autora...">Books that make learning feel like play.</textarea>
+    </div>
+
+    <!-- Optional image uploads -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>🖼️ Tło <span class="text-slate-500">(opcjonalne)</span></label>
+        <div class="upload-zone" id="bg-zone">
+          <input type="file" id="background" accept="image/*" class="hidden"/>
+          <div class="upload-label text-slate-400 text-xs">Kliknij aby wybrać tło (PNG/JPG)</div>
+        </div>
+      </div>
+      <div>
+        <label>🌸 Dekoracja <span class="text-slate-500">(opcjonalne)</span></label>
+        <div class="upload-zone" id="deco-zone">
+          <input type="file" id="decorative" accept="image/*" class="hidden"/>
+          <div class="upload-label text-slate-400 text-xs">Obraz dekoracyjny na przód</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="error-msg" class="hidden bg-red-900/40 border border-red-700 text-red-300 rounded-lg p-3 text-sm"></div>
+
+    <button id="run-btn" onclick="runCover()" class="btn-primary w-full">
+      📗 Generuj okładkę KDP
+    </button>
+  </div>
+
+  <!-- Log + Results -->
+  <div class="space-y-4">
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-white">📟 Log</h2>
+        <div id="status-badge" class="hidden"></div>
+      </div>
+      <div id="terminal" class="terminal">Kliknij "Generuj okładkę KDP" aby rozpocząć...</div>
+    </div>
+
+    <div id="results-section" class="hidden card p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold text-white">📦 Wyniki</h2>
+        <div class="flex gap-2">
+          <button onclick="downloadResult()" class="btn-success text-sm">⬇️ Pobierz PDF</button>
+        </div>
+      </div>
+
+      <!-- Validation summary -->
+      <div id="validation-summary" class="hidden text-xs font-mono space-y-0.5"></div>
+
+      <!-- Preview image -->
+      <div id="preview-wrap" class="hidden">
+        <p class="text-xs text-slate-500 mb-1">Podgląd (kliknij aby powiększyć):</p>
+        <a id="preview-link" href="#" target="_blank">
+          <img id="preview-img" class="rounded-lg border border-slate-700 w-full cursor-zoom-in" alt="Cover preview"/>
+        </a>
+      </div>
+
+      <button onclick="cleanupFiles()" class="w-full text-sm py-2 rounded-lg border border-red-800 text-red-300 hover:bg-red-900/30">
+        🗑️ Usuń wygenerowane pliki z dysku
+      </button>
+    </div>
+
+    <!-- Spec info -->
+    <div class="card p-4">
+      <h2 class="font-semibold text-white mb-2">📐 Specyfikacja KDP</h2>
+      <div class="text-xs text-slate-400 font-mono space-y-1">
+        <div>Trim: 8.5" × 11" | Bleed: 0.125"</div>
+        <div>Rozmiar (48 str): 5207 × 3375 px @ 300 DPI</div>
+        <div>Grzbiet: strony × 0.002252" (white paper)</div>
+        <div>Strefa kodu: 2" × 1.2" (dolny prawy róg tyłu)</div>
+        <div>Safe zone: 0.25" od każdej krawędzi trim</div>
+        <div>Format PDF: 1 strona, RGB, TrimBox + BleedBox</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentJobId = null;
+
+// ── Book-type presets ───────────────────────────────────────────────
+const COVER_PRESETS = {
+  kids_activity: {
+    mode: 'kids', palette: 'city_bright', bg_theme: 'city', badge: 'AGES 3-5',
+    hook: "42 Fun Activities to Spark Your Child's Imagination!",
+    tagline: 'Activity Book · Ages 3-5 · {page_count} Activities · 8.5 × 11 inches',
+    cta: 'Perfect for travel, rainy days & quiet time',
+    bio: 'Books that make learning feel like play.',
+  },
+  kids_coloring: {
+    mode: 'kids', palette: 'city_bright', bg_theme: 'city', badge: 'AGES 4-8',
+    hook: 'Big, Bold Coloring Pages for Little Artists!',
+    tagline: 'Coloring Book · Ages 4-8 · {page_count} Pages · 8.5 × 11 inches',
+    cta: 'A perfect rainy-day activity',
+    bio: 'Coloring books designed for curious kids.',
+  },
+  adult_coloring: {
+    mode: 'adult', palette: 'lavender', bg_theme: 'city', badge: '',
+    hook: 'Find Your Peace, One Page at a Time',
+    tagline: 'Adults Coloring Book · {page_count} Pages · 8.5 × 11 inches',
+    cta: 'Order now — start the fun today!',
+    bio: 'Mindful coloring for moments of calm.',
+  },
+  adult_puzzle: {
+    mode: 'adult', palette: 'lavender', bg_theme: 'city', badge: '',
+    hook: '{page_count} Brain-Teasing Puzzles Inside!',
+    tagline: 'Puzzle Book · {page_count} Puzzles · 8.5 × 11 inches',
+    cta: 'Sharpen your mind, one puzzle at a time',
+    bio: 'Puzzles for curious minds.',
+  },
+};
+
+// Replace {page_count} with the current pages value; if unavailable,
+// strip the token and tidy leftover separators.
+function subPageCount(s) {
+  const pv = parseInt(document.getElementById('pages').value);
+  if (pv && pv > 0) return s.split('{page_count}').join(pv);
+  let t = s.split('{page_count}').join('').replace(/\s{2,}/g, ' ');
+  t = t.replace(/·\s*·/g, '·')
+       .replace(/^\s*·\s*/, '')
+       .replace(/\s*·\s*$/, '')
+       .trim();
+  return t;
+}
+
+function applyPreset() {
+  const key = document.getElementById('book_type').value;
+  const p = COVER_PRESETS[key];
+  if (!p) return;
+  // Cover mode → toggle the matching radio, then refresh dependent UI
+  const radio = document.querySelector(
+    `input[name="cover_mode"][value="${p.mode}"]`);
+  if (radio) { radio.checked = true; }
+  updateMode();
+  // Palette must be set AFTER updateMode() (it filters/normalizes options)
+  const palSel = document.getElementById('palette');
+  if ([...palSel.options].some(o => o.value === p.palette)) {
+    palSel.value = p.palette;
+  }
+  if (document.getElementById('bg_theme'))
+    document.getElementById('bg_theme').value = p.bg_theme;
+  document.getElementById('badge_text').value = p.badge;
+  document.getElementById('hook').value      = p.hook;
+  document.getElementById('cta_text').value  = p.cta;
+  document.getElementById('author_bio').value = p.bio;
+  document.getElementById('tagline').value   = subPageCount(p.tagline);
+}
+
+function updateSpineInfo() {
+  const pages = parseInt(document.getElementById('pages').value) || 48;
+  const paper = document.getElementById('paper').value;
+  const perPage = paper === 'cream' ? 0.0025 : 0.002252;
+  const spine = pages * perPage;
+  const totalW = 0.125 * 2 + 8.5 * 2 + spine;
+  const totalH = 0.125 * 2 + 11.0;
+  const wPx = Math.round(totalW * 300);
+  const hPx = Math.round(totalH * 300);
+  document.getElementById('spine-info').textContent =
+    `Grzbiet: ${spine.toFixed(4)}" (${Math.round(spine * 300)}px) | ` +
+    `Canvas: ${wPx} × ${hPx} px @ 300 DPI`;
+}
+
+updateSpineInfo();
+
+function updateMode() {
+  const mode = document.querySelector('input[name="cover_mode"]:checked').value;
+  const isKids = mode === 'kids';
+  document.getElementById('kids-fields').classList.toggle('hidden', !isKids);
+  // Filter palette dropdown to match mode
+  const pal = document.getElementById('palette');
+  const opts = pal.querySelectorAll('option');
+  let firstMatch = null;
+  opts.forEach(o => {
+    const show = (o.dataset.mode === mode);
+    o.hidden = !show;
+    o.disabled = !show;
+    if (show && firstMatch === null) firstMatch = o.value;
+  });
+  if (firstMatch && opts[pal.selectedIndex].dataset.mode !== mode) {
+    pal.value = firstMatch;
+  }
+  // Show/hide adult-specific upload zones
+  document.getElementById('deco-zone').parentElement.classList.toggle('opacity-50', isKids);
+}
+
+updateMode();
+applyPreset();   // default = Kids Activity Book (3-5) → fresh-load safe copy
+
+async function runCover() {
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.add('hidden');
+
+  const title    = document.getElementById('title').value.trim();
+  const subtitle = document.getElementById('subtitle').value.trim();
+  const author   = document.getElementById('author').value.trim();
+  if (!title)    { errEl.textContent = 'Podaj tytuł'; errEl.classList.remove('hidden'); return; }
+  if (!subtitle) { errEl.textContent = 'Podaj podtytuł'; errEl.classList.remove('hidden'); return; }
+
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = '<span class="spinner"></span> Generuję...';
+  hideEl('results-section');
+  hideEl('preview-wrap');
+  setHTML('status-badge', '<span class="badge badge-running">⏳ Działa</span>');
+  showEl('status-badge');
+
+  const mode = document.querySelector('input[name="cover_mode"]:checked').value;
+
+  const fd = new FormData();
+  fd.append('title',      title);
+  fd.append('subtitle',   subtitle);
+  fd.append('author',     author);
+  fd.append('pages',      document.getElementById('pages').value);
+  fd.append('paper',      document.getElementById('paper').value);
+  fd.append('palette',    document.getElementById('palette').value);
+  fd.append('seed',       document.getElementById('seed').value);
+  fd.append('hook',       document.getElementById('hook').value);
+  fd.append('tagline',    subPageCount(document.getElementById('tagline').value));
+  fd.append('bullets',    '');   // bullets removed from the back cover
+  fd.append('author_bio', document.getElementById('author_bio').value);
+  fd.append('cover_mode', mode);
+  fd.append('bg_theme',   document.getElementById('bg_theme').value);
+  fd.append('badge_text', document.getElementById('badge_text').value);
+  fd.append('cta_text',   document.getElementById('cta_text').value);
+
+  const bgFile     = document.getElementById('background').files[0];
+  const decoFile   = document.getElementById('decorative').files[0];
+  const mascotFile = document.getElementById('mascot').files[0];
+  if (bgFile)     fd.append('background', bgFile);
+  if (decoFile)   fd.append('decorative', decoFile);
+  if (mascotFile) fd.append('mascot',     mascotFile);
+
+  const res  = await fetch('/kdp/cover/run', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.error) {
+    errEl.textContent = data.error; errEl.classList.remove('hidden');
+    resetBtn(); return;
+  }
+
+  currentJobId = data.job_id;
+  startLog(data.job_id, 'terminal', onDone);
+}
+
+function onDone() {
+  resetBtn();
+  fetch('/job/' + currentJobId).then(r => r.json()).then(d => {
+    if (d.status === 'done') {
+      setHTML('status-badge', '<span class="badge badge-done">✅ Gotowe</span>');
+      showEl('results-section');
+      loadPreview();
+    } else {
+      setHTML('status-badge', '<span class="badge badge-error">❌ Błąd</span>');
+    }
+  });
+}
+
+function loadPreview() {
+  fetch('/kdp/cover/preview/' + currentJobId)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.b64) return;
+      const src = 'data:image/png;base64,' + d.b64;
+      document.getElementById('preview-img').src = src;
+      document.getElementById('preview-link').href = src;
+      showEl('preview-wrap');
+    });
+}
+
+function downloadResult() {
+  if (currentJobId) window.location.href = '/download/' + currentJobId;
+}
+
+function resetBtn() {
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '📗 Generuj okładkę KDP';
+}
+
+async function cleanupFiles() {
+  const total = await cleanupJobs(currentJobId);
+  if (total < 0) return;
+  hideEl('results-section');
+  hideEl('preview-wrap');
+  setHTML('status-badge', `<span class="badge">🧹 Usunięto ${total} pozycji</span>`);
+  currentJobId = null;
+}
+</script>
+{% endblock %}

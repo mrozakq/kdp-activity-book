@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Python Money Tools{% endblock %} — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dash: { bg: '#0f172a', card: '#1e293b', border: '#334155',
+                    accent: '#3b82f6', muted: '#64748b' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background:#0f172a; color:#e2e8f0; font-family:system-ui,sans-serif; }
+    .card { background:#1e293b; border:1px solid #334155; border-radius:.75rem; }
+    .btn-primary { background:#3b82f6; color:#fff; padding:.5rem 1.25rem; border-radius:.5rem;
+                   font-weight:600; transition:background .15s; cursor:pointer; }
+    .btn-primary:hover { background:#2563eb; }
+    .btn-secondary { background:#334155; color:#e2e8f0; padding:.5rem 1.25rem; border-radius:.5rem;
+                     font-weight:500; transition:background .15s; cursor:pointer; border:1px solid #475569; }
+    .btn-secondary:hover { background:#475569; }
+    .btn-success { background:#10b981; color:#fff; padding:.5rem 1.25rem; border-radius:.5rem;
+                   font-weight:600; transition:background .15s; cursor:pointer; }
+    .btn-success:hover { background:#059669; }
+    .input { background:#0f172a; border:1px solid #334155; border-radius:.5rem;
+             color:#e2e8f0; padding:.5rem .75rem; width:100%; }
+    .input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.25); }
+    label { font-size:.875rem; color:#94a3b8; margin-bottom:.25rem; display:block; }
+    .terminal { background:#000; color:#22c55e; font-family:'Courier New',monospace;
+                font-size:.8rem; line-height:1.5; padding:1rem; border-radius:.5rem;
+                min-height:200px; max-height:380px; overflow-y:auto; white-space:pre-wrap; }
+    .badge { display:inline-flex; align-items:center; gap:.3rem; padding:.2rem .6rem;
+             border-radius:9999px; font-size:.75rem; font-weight:600; }
+    .badge-done    { background:#052e16; color:#4ade80; border:1px solid #15803d; }
+    .badge-error   { background:#450a0a; color:#f87171; border:1px solid #b91c1c; }
+    .badge-running { background:#1e1b4b; color:#818cf8; border:1px solid #4338ca; }
+    .tab { padding:.5rem 1rem; border-radius:.5rem; cursor:pointer; font-weight:500;
+           color:#94a3b8; transition:all .15s; }
+    .tab.active { background:#3b82f6; color:#fff; }
+    .tab:hover:not(.active) { background:#334155; color:#e2e8f0; }
+    .upload-zone { border:2px dashed #334155; border-radius:.75rem; padding:2rem;
+                   text-align:center; cursor:pointer; transition:border-color .15s; }
+    .upload-zone:hover, .upload-zone.drag { border-color:#3b82f6; background:rgba(59,130,246,.05); }
+    table { width:100%; border-collapse:collapse; }
+    th { text-align:left; padding:.6rem .75rem; font-size:.75rem; text-transform:uppercase;
+         letter-spacing:.05em; color:#64748b; border-bottom:1px solid #334155; }
+    td { padding:.6rem .75rem; border-bottom:1px solid #1e293b; font-size:.875rem; }
+    tr:hover td { background:#1e293b; }
+    .spinner { border:3px solid #334155; border-top-color:#3b82f6; border-radius:50%;
+               width:20px; height:20px; animation:spin .7s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:#0f172a; }
+    ::-webkit-scrollbar-thumb { background:#334155; border-radius:3px; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- Nav -->
+<nav style="background:#1e293b;border-bottom:1px solid #334155;" class="sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
+    <a href="/" class="flex items-center gap-2 font-bold text-white">
+      <span class="text-xl">💰</span>
+      <span class="text-blue-400">Python Money</span><span class="text-slate-400 font-normal">Tools</span>
+    </a>
+    <div class="flex items-center gap-1 text-sm">
+      {% for t in [('/', '🏠', 'Dashboard'), ('/kdp', '📘', 'KDP Builder'), ('/history', '📋', 'Historia')] %}
+      <a href="{{ t[0] }}" class="flex items-center gap-1 px-3 py-1.5 rounded-md transition-colors
+         {% if request.path == t[0] %}bg-blue-600 text-white{% else %}text-slate-400 hover:text-white hover:bg-slate-700{% endif %}">
+        <span>{{ t[1] }}</span>
+        <span>{{ t[2] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-8">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="text-center text-slate-600 text-xs py-6 mt-8">
+  Python Money Tools Dashboard &nbsp;·&nbsp; Flask + Tailwind CSS
+</footer>
+
+<script>
+// Global SSE log helper
+function startLog(jobId, terminalId, onDone) {
+  const el = document.getElementById(terminalId);
+  if (!el) return;
+  el.textContent = '';
+  const src = new EventSource('/stream/' + jobId);
+  src.onmessage = e => {
+    el.textContent += e.data + '\n';
+    el.scrollTop = el.scrollHeight;
+  };
+  src.addEventListener('done', () => {
+    src.close();
+    if (onDone) onDone();
+  });
+  src.onerror = () => { src.close(); };
+}
+
+function showEl(id) { const e=document.getElementById(id); if(e) e.classList.remove('hidden'); }
+function hideEl(id) { const e=document.getElementById(id); if(e) e.classList.add('hidden'); }
+function setHTML(id, html) { const e=document.getElementById(id); if(e) e.innerHTML = html; }
+function setText(id, txt) { const e=document.getElementById(id); if(e) e.textContent = txt; }
+
+// Remove generated files for one or more job ids from results/
+async function cleanupJobs(...ids) {
+  const real = [...new Set(ids.filter(Boolean))];
+  if (!real.length) return 0;
+  if (!confirm('Usunąć wszystkie wygenerowane pliki z dysku?\n(Pobrane wcześniej kopie zostają u Ciebie.)')) return -1;
+  let total = 0;
+  for (const id of real) {
+    try {
+      const r = await fetch('/cleanup/' + id, { method: 'POST' });
+      const j = await r.json();
+      if (j.ok) total += j.removed;
+    } catch (e) { /* ignore */ }
+  }
+  return total;
+}
+
+// Drag-n-drop upload zones
+document.querySelectorAll('.upload-zone').forEach(zone => {
+  const input = zone.querySelector('input[type=file]');
+  zone.addEventListener('click', () => input && input.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag');
+    if (input && e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      zone.querySelector('.upload-label') && (zone.querySelector('.upload-label').textContent =
+        Array.from(e.dataTransfer.files).map(f=>f.name).join(', '));
+    }
+  });
+  if (input) input.addEventListener('change', () => {
+    zone.querySelector('.upload-label') && (zone.querySelector('.upload-label').textContent =
+      Array.from(input.files).map(f=>f.name).join(', '));
+  });
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

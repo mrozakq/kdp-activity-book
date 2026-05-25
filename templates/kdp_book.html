@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+{% block title %}KDP Book Builder{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-xl">📘</div>
+  <div>
+    <h1 class="text-2xl font-bold text-white">KDP Book Builder</h1>
+    <p class="text-sm text-slate-400">Generuje kompletną książkę do kolorowania — 50 projektów + okładka — gotową do wgrania na Amazon KDP</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- ── FORM ── -->
+  <div class="card p-6 space-y-5">
+    <h2 class="font-semibold text-white">⚙️ Ustawienia książki</h2>
+
+    <!-- Title / Subtitle / Author -->
+    <div class="space-y-3">
+      <div>
+        <label>📖 Tytuł <span class="text-red-400">*</span></label>
+        <input id="title" class="input" value="Mindful Moments"/>
+      </div>
+      <div>
+        <label>💬 Podtytuł <span class="text-red-400">*</span></label>
+        <input id="subtitle" class="input" value="50 Mindful Designs for Stress Relief"/>
+      </div>
+      <div>
+        <label>✍️ Autor <span class="text-slate-500">(opcjonalne — puste = białe pole do podpisu)</span></label>
+        <input id="author" class="input" placeholder="lub zostaw puste"/>
+      </div>
+    </div>
+
+    <!-- Pages & Paper -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>📄 Liczba stron wnętrza</label>
+        <input id="pages" type="number" class="input" value="100" min="24" max="800" oninput="updateSpineInfo()"/>
+      </div>
+      <div>
+        <label>📋 Typ papieru</label>
+        <select id="paper" class="input" onchange="updateSpineInfo()">
+          <option value="white">White (0.002252"/str.)</option>
+          <option value="cream">Cream (0.0025"/str.)</option>
+        </select>
+      </div>
+    </div>
+    <div id="spine-info" class="text-xs text-slate-400 bg-slate-800 rounded-lg p-2 font-mono"></div>
+
+    <!-- Palette & Seed -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>🎨 Paleta okładki</label>
+        <select id="palette" class="input">
+          {% for p in palettes %}
+          <option value="{{ p }}" {% if p=='sage' %}selected{% endif %}>{{ p|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>🎲 Seed tła okładki</label>
+        <input id="seed" type="number" class="input" value="42" min="0" max="9999"/>
+      </div>
+    </div>
+
+    <!-- Interior settings -->
+    <div class="rounded-xl p-4 space-y-3" style="background:#0c1a0e;border:1px solid #166534;">
+      <div class="font-semibold text-green-300 text-sm">🎨 Wnętrze — 50 projektów × 5 kategorii</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Czcionka cytatów</label>
+          <select id="font" class="input text-sm py-1">
+            <option value="random">🎲 Losowa</option>
+            {% for f in fonts %}
+            <option value="{{ f }}">{{ f }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Rozmiar czcionki</label>
+          <input id="font_size" type="number" class="input text-sm py-1" value="280" min="100" max="600"/>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="text-xs mb-0">Kolor tekstu</label>
+          <div class="flex gap-1 items-center">
+            <input id="text_color" type="color" value="#000000" class="w-9 h-9 rounded cursor-pointer bg-transparent border-0"/>
+            <input id="text_color_hex" class="input text-xs py-1" value="#000000"/>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Kolor obrysu</label>
+          <div class="flex gap-1 items-center">
+            <input id="stroke_color" type="color" value="#ffffff" class="w-9 h-9 rounded cursor-pointer bg-transparent border-0"/>
+            <input id="stroke_color_hex" class="input text-xs py-1" value="#ffffff"/>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs mb-0">Grubość obrysu</label>
+          <input id="stroke_width" type="number" class="input text-sm py-1" value="12" min="0" max="60"/>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-0">Tryb B&W</label>
+          <select id="bw_mode" class="input text-sm py-1">
+            <option value="1">Pure B&W (1-bit) — line art</option>
+            <option value="L">Grayscale (L) — foto-mandala</option>
+          </select>
+        </div>
+        <div class="text-xs text-slate-400 pt-3 space-y-0.5">
+          <div>✅ 2625×3375px @ 300 DPI</div>
+          <div>✅ Bleed 0.125", gutter 0.625"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom backgrounds (optional) -->
+    <div class="space-y-2">
+      <label>🖼️ Własne tła <span class="text-slate-500">(opcjonalne — zastąpią wbudowane)</span></label>
+      <div class="upload-zone" style="padding:1rem;">
+        <input id="bg_images" type="file" accept="image/*" multiple class="hidden"/>
+        <div class="upload-label text-sm text-slate-400">
+          📁 Wybierz pliki lub przeciągnij tutaj (PNG/JPG)
+        </div>
+        <div class="text-xs text-slate-500 mt-1">
+          5+ plików zalecane; bez plików = procedura/folder backgrounds
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-quotes from niche (optional) -->
+    <details class="rounded-xl p-4" style="background:#1e1b4b;border:1px solid #4338ca;">
+      <summary class="cursor-pointer font-semibold text-indigo-300 text-sm">
+        🤖 Auto-cytaty z niszy (opcjonalne — zastąpi quotes_50.json)
+      </summary>
+      <div class="mt-3 space-y-3">
+        <p class="text-xs text-slate-400">
+          Amazon Parser znajdzie tytuły w niszy → Claude (Sonnet 4.6) wygeneruje 50 dopasowanych cytatów. Wymaga <code class="bg-slate-800 px-1 rounded">ANTHROPIC_API_KEY</code> w <code class="bg-slate-800 px-1 rounded">.env</code>.
+        </p>
+        <div>
+          <label class="text-xs mb-0">Słowa kluczowe (jedno na linię, max 5)</label>
+          <textarea id="auto_keywords" class="input text-sm" rows="3"
+            placeholder="mindfulness coloring book&#10;stress relief adults&#10;calm meditation"></textarea>
+        </div>
+        <div>
+          <label class="text-xs mb-0">ScrapeOps API key</label>
+          <input id="auto_scrapeops_key" class="input text-sm" placeholder="z scrapeops.io"/>
+        </div>
+        <button type="button" onclick="generateQuotes()" id="gen-quotes-btn" class="btn-secondary text-sm w-full">
+          🤖 Wygeneruj 50 cytatów
+        </button>
+        <div id="gen-quotes-log" class="terminal text-xs hidden" style="min-height:100px;max-height:200px;"></div>
+        <div id="gen-quotes-result" class="hidden space-y-2">
+          <label class="text-xs mb-0">Wygenerowane cytaty (edytuj swobodnie — JSON):</label>
+          <textarea id="custom_quotes_json" class="input text-xs font-mono" rows="10"></textarea>
+          <label class="flex items-center gap-2 text-xs">
+            <input id="use_custom_quotes" type="checkbox" checked/>
+            <span>Użyj tych cytatów zamiast <code class="bg-slate-800 px-1 rounded">quotes_50.json</code></span>
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <!-- Cover back text -->
+    <div class="space-y-3">
+      <div>
+        <label>🎯 Hook (tylna okładka)</label>
+        <input id="hook" class="input" value="Find Your Peace, One Page at a Time"/>
+      </div>
+      <div>
+        <label>• Punkty na tylnej okładce <span class="text-slate-500">(jeden na linię)</span></label>
+        <textarea id="bullets" class="input text-sm font-mono" rows="4">Premium 8.5x11 inch format
+One design per page
+Bold lines — perfect for coloring
+Perfect gift for women</textarea>
+      </div>
+      <div>
+        <label>🏷️ Tagline</label>
+        <input id="tagline" class="input" value="Adults Coloring Book · 100 Pages · 8.5 × 11 inches"/>
+      </div>
+    </div>
+
+    <div id="error-msg" class="hidden bg-red-900/40 border border-red-700 text-red-300 rounded-lg p-3 text-sm"></div>
+
+    <button id="run-btn" onclick="runAll()" class="btn-primary w-full text-base py-3">
+      📘 Generuj kompletną książkę KDP
+    </button>
+  </div>
+
+  <!-- ── PROGRESS + RESULTS ── -->
+  <div class="space-y-4">
+
+    <!-- Steps tracker -->
+    <div class="card p-4 space-y-3">
+      <h2 class="font-semibold text-white">📊 Postęp</h2>
+      <div class="space-y-2">
+        <div id="step1" class="flex items-center gap-3 p-3 rounded-lg bg-slate-800">
+          <div id="step1-icon" class="text-xl w-8 text-center">⬜</div>
+          <div class="flex-1">
+            <div class="text-sm font-medium text-white">Krok 1 — Generowanie 50 projektów</div>
+            <div id="step1-sub" class="text-xs text-slate-400">Czeka na start</div>
+          </div>
+        </div>
+        <div id="step2" class="flex items-center gap-3 p-3 rounded-lg bg-slate-800">
+          <div id="step2-icon" class="text-xl w-8 text-center">⬜</div>
+          <div class="flex-1">
+            <div class="text-sm font-medium text-white">Krok 2 — Budowanie PDF wnętrza (100 stron)</div>
+            <div id="step2-sub" class="text-xs text-slate-400">Czeka na krok 1</div>
+          </div>
+        </div>
+        <div id="step3" class="flex items-center gap-3 p-3 rounded-lg bg-slate-800">
+          <div id="step3-icon" class="text-xl w-8 text-center">⬜</div>
+          <div class="flex-1">
+            <div class="text-sm font-medium text-white">Krok 3 — Generowanie okładki</div>
+            <div id="step3-sub" class="text-xs text-slate-400">Czeka na krok 1</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log terminal -->
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-white">📟 Log</h2>
+        <div id="status-badge" class="hidden"></div>
+      </div>
+      <div id="terminal" class="terminal" style="height:220px;">Kliknij "Generuj kompletną książkę KDP" aby rozpocząć...</div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-section" class="hidden card p-4 space-y-4">
+      <h2 class="font-semibold text-white">📦 Gotowe pliki</h2>
+
+      <div class="grid grid-cols-1 gap-3">
+        <!-- Interior -->
+        <div id="interior-result" class="hidden rounded-xl p-4 space-y-2" style="background:#0c1a0e;border:1px solid #166534;">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold text-green-300 text-sm">📄 Wnętrze KDP PDF</div>
+              <div id="interior-info" class="text-xs text-slate-400 mt-0.5"></div>
+            </div>
+            <button id="dl-interior" onclick="dlInterior()" class="btn-success text-sm">⬇️ Pobierz</button>
+          </div>
+        </div>
+
+        <!-- Cover -->
+        <div id="cover-result" class="hidden rounded-xl p-4 space-y-2" style="background:#0c1a2e;border:1px solid #1e40af;">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold text-blue-300 text-sm">🎨 Okładka KDP PDF</div>
+              <div class="text-xs text-slate-400 mt-0.5">RGB, 300 DPI, TrimBox/BleedBox</div>
+            </div>
+            <button id="dl-cover" onclick="dlCover()" class="btn-success text-sm">⬇️ Pobierz</button>
+          </div>
+          <!-- Cover preview -->
+          <div id="cover-preview-wrap" class="hidden">
+            <a id="cover-preview-link" href="#" target="_blank">
+              <img id="cover-preview-img" class="rounded-lg border border-slate-700 w-full cursor-zoom-in mt-2" alt="Cover preview"/>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl p-3 text-xs text-slate-400 space-y-1" style="background:#1e293b;">
+        <div class="font-semibold text-slate-300 mb-1">📋 Instrukcja wgrania na KDP:</div>
+        <div>1. kdp.amazon.com → Add new title → Paperback</div>
+        <div>2. Manuscript → wgraj <span class="text-green-400">Wnętrze PDF</span></div>
+        <div>3. Cover → wgraj <span class="text-blue-400">Okładka PDF</span></div>
+        <div>4. Submit for review</div>
+      </div>
+
+      <button onclick="cleanupFiles()" class="w-full text-sm py-2 rounded-lg border border-red-800 text-red-300 hover:bg-red-900/30">
+        🗑️ Usuń wygenerowane pliki z dysku
+      </button>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let interiorJobId  = null;
+let pdfJobId       = null;
+let coverJobId     = null;
+
+// Spine info
+function updateSpineInfo() {
+  const pages = parseInt(document.getElementById('pages').value) || 100;
+  const paper = document.getElementById('paper').value;
+  const perPage = paper === 'cream' ? 0.0025 : 0.002252;
+  const spine = pages * perPage;
+  const totalW = 0.25 + 17 + spine;
+  const wPx = Math.round(totalW * 300);
+  document.getElementById('spine-info').textContent =
+    `Grzbiet: ${spine.toFixed(4)}" (${Math.round(spine*300)}px) | Canvas: ${wPx} × 3375 px @ 300 DPI`;
+}
+updateSpineInfo();
+
+// Color sync
+['text_color','stroke_color'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e =>
+    document.getElementById(id+'_hex').value = e.target.value);
+  document.getElementById(id+'_hex').addEventListener('input', e => {
+    if (/^#[0-9a-f]{6}$/i.test(e.target.value))
+      document.getElementById(id).value = e.target.value;
+  });
+});
+
+function setStep(n, state, sub) {
+  const icons = { wait:'⬜', run:'⏳', done:'✅', err:'❌' };
+  const colors = { wait:'bg-slate-800', run:'bg-blue-900/40', done:'bg-green-900/30', err:'bg-red-900/30' };
+  const el = document.getElementById(`step${n}`);
+  el.className = `flex items-center gap-3 p-3 rounded-lg ${colors[state]}`;
+  document.getElementById(`step${n}-icon`).textContent = icons[state];
+  if (sub) document.getElementById(`step${n}-sub`).textContent = sub;
+}
+
+function appendLog(msg) {
+  const t = document.getElementById('terminal');
+  t.textContent += '\n' + msg;
+  t.scrollTop = t.scrollHeight;
+}
+
+async function runAll() {
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.add('hidden');
+
+  const title    = document.getElementById('title').value.trim();
+  const subtitle = document.getElementById('subtitle').value.trim();
+  if (!title)    { errEl.textContent='Podaj tytuł'; errEl.classList.remove('hidden'); return; }
+  if (!subtitle) { errEl.textContent='Podaj podtytuł'; errEl.classList.remove('hidden'); return; }
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = '<span class="spinner"></span> Generuję...';
+  hideEl('results-section');
+  document.getElementById('terminal').textContent = '';
+  setStep(1,'wait','Czeka na start');
+  setStep(2,'wait','Czeka na krok 1');
+  setStep(3,'wait','Czeka na krok 1');
+  setHTML('status-badge','<span class="badge badge-running">⏳ Działa</span>');
+  showEl('status-badge');
+
+  // ── STEP 1: generate 50 designs ──────────────────────────────────────────
+  setStep(1,'run','Generowanie 50 projektów...');
+  appendLog('▶ Krok 1: Generowanie 50 projektów kolorowania...');
+
+  const fd = new FormData();
+  fd.append('book_mode_50', 'true');
+  fd.append('kdp_mode',     'true');
+  fd.append('font',         document.getElementById('font').value);
+  fd.append('font_size',    document.getElementById('font_size').value);
+  fd.append('text_color',   document.getElementById('text_color').value);
+  fd.append('stroke_color', document.getElementById('stroke_color').value);
+  fd.append('stroke_width', document.getElementById('stroke_width').value);
+  fd.append('bw_mode',      document.getElementById('bw_mode').value);
+  const bgImgs = document.getElementById('bg_images').files;
+  for (const f of bgImgs) fd.append('images', f);
+
+  // Optional: override bundled quotes_50.json with auto-generated ones
+  const useCustom = document.getElementById('use_custom_quotes');
+  if (useCustom && useCustom.checked) {
+    const customJson = document.getElementById('custom_quotes_json').value.trim();
+    if (customJson) fd.append('custom_quotes_json', customJson);
+  }
+
+  const r1 = await fetch('/kdp/coloring/run', { method:'POST', body:fd });
+  const d1 = await r1.json();
+  if (d1.error) { showError(d1.error); return; }
+  interiorJobId = d1.job_id;
+
+  await streamLog(interiorJobId, 'terminal');
+
+  const j1 = await fetchJob(interiorJobId);
+  if (j1.status !== 'done') { setStep(1,'err','Błąd'); showError('Generowanie projektów nie powiodło się'); return; }
+  setStep(1,'done', `${j1.results_count} projektów wygenerowanych`);
+  appendLog(`✅ Krok 1 gotowy — ${j1.results_count} projektów\n`);
+
+  // ── STEP 2 & 3 in parallel ───────────────────────────────────────────────
+  setStep(2,'run','Budowanie PDF 100 stron...');
+  setStep(3,'run','Generowanie okładki...');
+  appendLog('▶ Krok 2: Budowanie PDF wnętrza (100 stron)...');
+  appendLog('▶ Krok 3: Generowanie okładki...');
+
+  const [pdfDone, coverDone] = await Promise.all([
+    buildInteriorPDF(),
+    buildCover(),
+  ]);
+
+  if (pdfDone)   setStep(2,'done','PDF wnętrza gotowy');
+  else           setStep(2,'err','Błąd PDF wnętrza');
+  if (coverDone) setStep(3,'done','Okładka gotowa');
+  else           setStep(3,'err','Błąd okładki');
+
+  const allOk = pdfDone && coverDone;
+  setHTML('status-badge', allOk
+    ? '<span class="badge badge-done">✅ Gotowe</span>'
+    : '<span class="badge badge-error">⚠️ Częściowo</span>');
+
+  showEl('results-section');
+  if (pdfDone) {
+    showEl('interior-result');
+    setText('interior-info', `100 stron, grayscale/B&W, TrimBox/BleedBox`);
+  }
+  if (coverDone) {
+    showEl('cover-result');
+    loadCoverPreview();
+  }
+
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '📘 Generuj kompletną książkę KDP';
+}
+
+async function buildInteriorPDF() {
+  try {
+    const r = await fetch(`/kdp/coloring/kdp_pdf/${interiorJobId}`, { method:'POST' });
+    const d = await r.json();
+    if (d.error) { appendLog('❌ PDF wnętrza: ' + d.error); return false; }
+    pdfJobId = d.job_id;
+    await streamLog(pdfJobId, 'terminal');
+    const j = await fetchJob(pdfJobId);
+    return j.status === 'done';
+  } catch(e) { appendLog('❌ ' + e); return false; }
+}
+
+async function buildCover() {
+  try {
+    const fd = new FormData();
+    fd.append('title',    document.getElementById('title').value.trim());
+    fd.append('subtitle', document.getElementById('subtitle').value.trim());
+    fd.append('author',   document.getElementById('author').value.trim());
+    fd.append('pages',    document.getElementById('pages').value);
+    fd.append('paper',    document.getElementById('paper').value);
+    fd.append('palette',  document.getElementById('palette').value);
+    fd.append('seed',     document.getElementById('seed').value);
+    fd.append('hook',     document.getElementById('hook').value);
+    fd.append('tagline',  document.getElementById('tagline').value);
+    fd.append('bullets',  document.getElementById('bullets').value);
+    const r = await fetch('/kdp/cover/run', { method:'POST', body:fd });
+    const d = await r.json();
+    if (d.error) { appendLog('❌ Okładka: ' + d.error); return false; }
+    coverJobId = d.job_id;
+    await streamLog(coverJobId, 'terminal');
+    const j = await fetchJob(coverJobId);
+    return j.status === 'done';
+  } catch(e) { appendLog('❌ ' + e); return false; }
+}
+
+function streamLog(jid, termId) {
+  return new Promise(resolve => {
+    const src = new EventSource(`/stream/${jid}`);
+    src.onmessage = e => {
+      if (e.data && e.data !== '✅ Zadanie zakończone') appendLog(e.data);
+    };
+    src.addEventListener('done', () => { src.close(); resolve(); });
+    src.onerror = () => { src.close(); resolve(); };
+  });
+}
+
+async function fetchJob(jid) {
+  const r = await fetch('/job/' + jid);
+  return r.json();
+}
+
+function loadCoverPreview() {
+  fetch('/kdp/cover/preview/' + coverJobId).then(r=>r.json()).then(d => {
+    if (!d.b64) return;
+    const src = 'data:image/png;base64,' + d.b64;
+    document.getElementById('cover-preview-img').src = src;
+    document.getElementById('cover-preview-link').href = src;
+    showEl('cover-preview-wrap');
+  });
+}
+
+function dlInterior() { if (pdfJobId)   window.location.href = '/download/' + pdfJobId; }
+function dlCover()    { if (coverJobId) window.location.href = '/download/' + coverJobId; }
+
+async function cleanupFiles() {
+  const total = await cleanupJobs(interiorJobId, pdfJobId, coverJobId);
+  if (total < 0) return;
+  hideEl('results-section');
+  hideEl('interior-result');
+  hideEl('cover-result');
+  hideEl('cover-preview-wrap');
+  setHTML('status-badge', `<span class="badge">🧹 Usunięto ${total} pozycji</span>`);
+  interiorJobId = null;
+  pdfJobId      = null;
+  coverJobId    = null;
+}
+
+function showError(msg) {
+  const errEl = document.getElementById('error-msg');
+  errEl.textContent = msg; errEl.classList.remove('hidden');
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '📘 Generuj kompletną książkę KDP';
+  setHTML('status-badge','<span class="badge badge-error">❌ Błąd</span>');
+}
+
+// ── Auto-quotes (Amazon → Claude → 50 quotes) ───────────────────────────────
+async function generateQuotes() {
+  const btn   = document.getElementById('gen-quotes-btn');
+  const log   = document.getElementById('gen-quotes-log');
+  const wrap  = document.getElementById('gen-quotes-result');
+  const ta    = document.getElementById('custom_quotes_json');
+  const keywords = document.getElementById('auto_keywords').value.trim();
+  const sopsKey  = document.getElementById('auto_scrapeops_key').value.trim();
+
+  if (!keywords) { alert('Podaj keywords'); return; }
+  if (!sopsKey)  { alert('Podaj ScrapeOps API key'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generuję...';
+  log.classList.remove('hidden');
+  log.textContent = '';
+  wrap.classList.add('hidden');
+
+  const fd = new FormData();
+  fd.append('keywords', keywords);
+  fd.append('scrapeops_api_key', sopsKey);
+
+  const res = await fetch('/kdp/quotes/generate', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.error) {
+    log.textContent = '❌ ' + data.error;
+    btn.disabled = false;
+    btn.innerHTML = '🤖 Wygeneruj 50 cytatów';
+    return;
+  }
+
+  const jid = data.job_id;
+  const src = new EventSource('/stream/' + jid);
+  src.onmessage = e => {
+    log.textContent += e.data + '\n';
+    log.scrollTop = log.scrollHeight;
+  };
+  src.addEventListener('done', () => {
+    src.close();
+    fetch('/job/' + jid).then(r => r.json()).then(j => {
+      btn.disabled = false;
+      btn.innerHTML = '🤖 Wygeneruj ponownie';
+      if (j.status === 'done' && j.data && j.data.quotes) {
+        ta.value = JSON.stringify(j.data.quotes, null, 2);
+        wrap.classList.remove('hidden');
+      }
+    });
+  });
+  src.onerror = () => { src.close(); btn.disabled = false; btn.innerHTML = '🤖 Wygeneruj 50 cytatów'; };
+}
+</script>
+{% endblock %}
