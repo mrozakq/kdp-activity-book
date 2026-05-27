@@ -25,6 +25,18 @@ THEMES = {
     'family_en':   ['MOM', 'DAD', 'BROTHER', 'SISTER', 'GRANDMA', 'GRANDPA', 'BABY'],
     'school_pl':   ['KSIĄŻKA', 'ZESZYT', 'OŁÓWEK', 'ŁAWKA', 'GUMKA', 'TORNISTER'],
     'school_en':   ['BOOK', 'PEN', 'DESK', 'CHAIR', 'BAG', 'RULER', 'PENCIL', 'ERASER'],
+    # Little Vibe Coders series themes (one per volume)
+    'ai_kids_basics_en':      ['PROMPT', 'ROBOT', 'CODE', 'ASK',
+                               'FIND', 'STEP', 'MAP', 'GOAL'],
+    'ai_kids_prompting_en':   ['PROMPT', 'ASK', 'TELL', 'INPUT', 'OUTPUT',
+                               'CLEAR', 'EXACT', 'GOAL', 'RULE', 'STEP'],
+    'ai_kids_loops_en':       ['LOOP', 'REPEAT', 'NEXT', 'RULE', 'THEN',
+                               'AGAIN', 'COUNT', 'ADD', 'STEP', 'ELSE'],
+    'ai_kids_constraints_en': ['RULE', 'MUST', 'EACH', 'ONLY', 'ROW',
+                               'COLUMN', 'FIT', 'SOLVE', 'CHECK', 'FIND'],
+    'ai_kids_director_en':    ['PROMPT', 'LOOP', 'RULE', 'INPUT', 'OUTPUT',
+                               'STEP', 'GOAL', 'FIND', 'COUNT', 'BUILD',
+                               'CREATE', 'DIRECT'],
 }
 
 # (rows, cols)

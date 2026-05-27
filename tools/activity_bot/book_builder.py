@@ -81,35 +81,34 @@ def _draw_filled_star(draw, cx, cy, r, color='black'):
 _FILENAME_RE = re.compile(r'^(\d+)_([a-z]+)(?:_.*)?\.png$', re.IGNORECASE)
 
 SECTION_NAMES = {
-    'maze':       'Mazes',
-    'sudoku':     'Sudoku',
-    'wordsearch': 'Word Search',
-    'tictactoe':  'Tic-Tac-Toe',
-    'magic':      'Magic Squares',
-    'dotgrid':    'Dot Grids',
-    'counting':   'Counting Fun',
-    'pattern':    'What Comes Next?',
-    'symmetry':   'Mirror Drawing',
-    'cbn':        'Color by Number',
-    'pathsum':    'Path Sums',
-    'mathmaze':   'Math Maze',
-    'coloring':   'Coloring',
+    'maze':       'Prompt Paths',
+    'sudoku':     'Constraints',
+    'wordsearch': 'Find the Keywords',
+    'magic':      'Balance the Grid',
+    'dotgrid':    'Draw the Output',
+    'counting':   'Count the Tokens',
+    'pattern':    'Loop It',
+    'symmetry':   'Mirror Functions',
+    'pathsum':    'Accumulators',
+    'mathmaze':   'Decision Trees',
 }
 
 # Honest-TOC: fixed display order + friendly labels. Counts are computed
 # dynamically from the actual generated pages; 0-count types are skipped,
 # so the TOC adapts to whatever mix/quantities the user picks.
-TOC_ORDER = ['coloring', 'maze', 'counting', 'cbn', 'dotgrid', 'pattern',
-             'symmetry', 'sudoku', 'wordsearch', 'tictactoe', 'magic',
-             'pathsum', 'mathmaze']
+TOC_ORDER = ['maze', 'pattern', 'symmetry', 'mathmaze', 'pathsum',
+             'sudoku', 'magic', 'counting', 'wordsearch', 'dotgrid']
 TOC_LABELS = {
-    'coloring': 'Coloring',
-    'maze':     'Mazes',
-    'counting': 'Counting Fun (How Many?)',
-    'cbn':      'Color by Number',
-    'dotgrid':  'Drawing Grids',
-    'pattern':  'What Comes Next?',
-    'symmetry': 'Mirror Drawing',
+    'maze':       'Prompt Paths',
+    'pattern':    'Loop It',
+    'symmetry':   'Mirror Functions',
+    'mathmaze':   'Decision Trees',
+    'pathsum':    'Accumulators',
+    'sudoku':     'Constraints',
+    'magic':      'Balance the Grid',
+    'counting':   'Count the Tokens',
+    'wordsearch': 'Find the Keywords',
+    'dotgrid':    'Draw the Output',
 }
 
 

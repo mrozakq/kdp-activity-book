@@ -6,12 +6,18 @@
 # traktuje warningi pipa pisane na stderr jako bledy terminujace skrypt.
 Set-Location -Path $PSScriptRoot
 
-if (-not (Test-Path "venv\Scripts\python.exe")) {
-    Write-Host "[setup] Tworze venv..." -ForegroundColor Cyan
-    python -m venv venv
+$venvPy = if ($IsWindows -or $env:OS -eq "Windows_NT") {
+    "venv\Scripts\python.exe"
+} else {
+    "venv/bin/python"
 }
 
-$py = ".\venv\Scripts\python.exe"
+if (-not (Test-Path $venvPy)) {
+    Write-Host "[setup] Tworze venv..." -ForegroundColor Cyan
+    python3 -m venv venv
+}
+
+$py = $venvPy
 
 & $py -m pip install --upgrade pip 1>$null
 Write-Host "[setup] Instaluje zaleznosci (jesli brak)..." -ForegroundColor Cyan

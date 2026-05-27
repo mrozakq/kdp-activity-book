@@ -65,24 +65,11 @@ def activity_run():
 
     kdp_mode = request.form.get('kdp_mode', 'true') == 'true'
     seed_base = int(request.form.get('seed', 42))
-    uploaded = request.files.getlist('coloring_pages')
-
-    # Save uploaded coloring pages (optional — to be included alongside mazes)
-    up_dir = UPLOAD_DIR / str(uuid.uuid4())
-    coloring_paths = []
-    if any(f.filename for f in uploaded):
-        up_dir.mkdir(parents=True, exist_ok=True)
-        for f in uploaded:
-            if f.filename:
-                p = up_dir / os.path.basename(f.filename)
-                f.save(str(p))
-                coloring_paths.append(str(p))
 
     if (n_mazes == 0 and n_sudoku == 0 and n_wordsearch == 0
-            and n_tictactoe == 0 and n_magic == 0 and n_dotgrid == 0
+            and n_magic == 0 and n_dotgrid == 0
             and n_counting == 0 and n_pattern == 0 and n_symmetry == 0
-            and n_cbn == 0 and n_pathsum == 0 and n_mathmaze == 0
-            and not coloring_paths):
+            and n_pathsum == 0 and n_mathmaze == 0):
         return jsonify({'error': 'Wybierz co najmniej jedną aktywność'}), 400
 
     jid = create_job()
@@ -106,7 +93,6 @@ def activity_run():
         'pathsum_difficulty': pathsum_difficulty,
         'mathmaze_difficulty': mathmaze_difficulty,
         'kdp': kdp_mode,
-        'coloring_pages': len(coloring_paths),
     })
 
     def run():
@@ -148,8 +134,6 @@ def activity_run():
             # Each item gets a fractional position (i+0.5)/n; we sort all items
             # by position so kinds interleave even when their counts differ.
             buckets = []
-            if coloring_paths:
-                buckets.append(('coloring', [(p,) for p in coloring_paths]))
             if n_mazes:      buckets.append(('maze',       [(i + 1,) for i in range(n_mazes)]))
             if n_sudoku:     buckets.append(('sudoku',     [(i + 1,) for i in range(n_sudoku)]))
             if n_wordsearch: buckets.append(('wordsearch', [(i + 1,) for i in range(n_wordsearch)]))
@@ -299,12 +283,6 @@ def activity_run():
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
                     jlog(jid, f'   ➗ [{idx:03d}] Math Maze {n} ({mathmaze_difficulty}) zapisany')
-                else:  # coloring
-                    src = _Image.open(payload).convert('RGB')
-                    if kdp_mode and src.size != canvas:
-                        src = src.resize(canvas, _Image.LANCZOS)
-                    src.save(str(out), dpi=(KDP_DPI, KDP_DPI))
-                    jlog(jid, f'   🎨 [{idx:03d}] {os.path.basename(payload)} dołączone')
                 generated.append(str(out))
 
             jlog(jid, f'✅ Wygenerowano łącznie {len(generated)} stron')
@@ -452,3 +430,31 @@ def activity_build_book():
 
     threading.Thread(target=run, daemon=True).start()
     return jsonify({'job_id': jid2})
+
+
+@bp.route('/activity/presets', methods=['GET'])
+def activity_presets_list():
+    """Return list of available series presets for UI dropdown."""
+    from tools.activity_bot.series_presets import (
+        list_preset_keys, preset_display_name, get_preset
+    )
+    out = []
+    for k in list_preset_keys():
+        p = get_preset(k)
+        out.append({
+            'key': k,
+            'label': preset_display_name(k),
+            'volume': p['volume'],
+            'subtitle': p['subtitle'],
+        })
+    return jsonify({'presets': out})
+
+
+@bp.route('/activity/preset/<key>', methods=['GET'])
+def activity_preset_detail(key):
+    """Return full config dict for a single preset (for JS auto-fill)."""
+    from tools.activity_bot.series_presets import get_preset
+    p = get_preset(key)
+    if not p:
+        return jsonify({'error': f'Unknown preset: {key}'}), 404
+    return jsonify(p)

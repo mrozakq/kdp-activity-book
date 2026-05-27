@@ -16,9 +16,24 @@
   <div class="card p-6 space-y-5">
     <h2 class="font-semibold text-white">⚙️ Ustawienia</h2>
 
+    <!-- LITTLE VIBE CODERS — Series Preset Picker -->
+    <div class="bg-slate-800 rounded-lg p-4 mb-4 border border-indigo-700">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="text-2xl">🤖</span>
+        <div>
+          <div class="font-semibold text-slate-100">Little Vibe Coders Series</div>
+          <div class="text-xs text-slate-400">Pick a volume — fills all fields automatically</div>
+        </div>
+      </div>
+      <select id="series_preset" class="input text-sm w-full">
+        <option value="">— Manual settings —</option>
+      </select>
+      <div id="preset_info" class="text-xs text-slate-400 mt-2 hidden"></div>
+    </div>
+
     <!-- Mazes -->
     <div class="rounded-xl p-4" style="background:#0c1a0e;border:1px solid #166534;">
-      <div class="font-semibold text-green-300 text-sm mb-3">🧩 Labirynty</div>
+      <div class="font-semibold text-green-300 text-sm mb-3">🧩 Prompt Paths (Mazes)</div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -38,7 +53,7 @@
 
     <!-- Sudoku -->
     <div class="rounded-xl p-4" style="background:#1a1a2e;border:1px solid #6366f1;">
-      <div class="font-semibold text-violet-300 text-sm mb-3">🔢 Sudoku</div>
+      <div class="font-semibold text-violet-300 text-sm mb-3">🔢 Constraints (Sudoku)</div>
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -63,7 +78,7 @@
     </div>
 
     <!-- Tic-Tac-Toe -->
-    <div class="rounded-xl p-4" style="background:#2d1b1b;border:1px solid #b91c1c;">
+    <div class="rounded-xl p-4 hidden" style="background:#2d1b1b;border:1px solid #b91c1c;">
       <div class="font-semibold text-rose-300 text-sm mb-3">⭕ Kółko-krzyżyk</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
@@ -83,7 +98,7 @@
 
     <!-- Magic squares -->
     <div class="rounded-xl p-4" style="background:#2e1a2e;border:1px solid #a21caf;">
-      <div class="font-semibold text-fuchsia-300 text-sm mb-3">✨ Magic Square</div>
+      <div class="font-semibold text-fuchsia-300 text-sm mb-3">✨ Balance the Grid (Magic Squares)</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -102,7 +117,7 @@
 
     <!-- Dot grid -->
     <div class="rounded-xl p-4" style="background:#1a2e2e;border:1px solid #0e7490;">
-      <div class="font-semibold text-cyan-300 text-sm mb-3">• Siatka kropek (do rysowania)</div>
+      <div class="font-semibold text-cyan-300 text-sm mb-3">• Draw the Output (Drawing Grid)</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -121,7 +136,7 @@
 
     <!-- Counting -->
     <div class="rounded-xl p-4" style="background:#2e2a1a;border:1px solid #ca8a04;">
-      <div class="font-semibold text-amber-300 text-sm mb-3">🔢 Ile jest? (counting)</div>
+      <div class="font-semibold text-amber-300 text-sm mb-3">🔢 Count the Tokens (Counting)</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -140,7 +155,7 @@
 
     <!-- Pattern completion -->
     <div class="rounded-xl p-4" style="background:#1a2a2e;border:1px solid #0891b2;">
-      <div class="font-semibold text-sky-300 text-sm mb-3">🔁 Co dalej? (pattern)</div>
+      <div class="font-semibold text-sky-300 text-sm mb-3">🔁 Loop It (Patterns)</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -159,7 +174,7 @@
 
     <!-- Symmetry -->
     <div class="rounded-xl p-4" style="background:#2e1a2a;border:1px solid #be185d;">
-      <div class="font-semibold text-pink-300 text-sm mb-3">🪞 Dorysuj drugą połowę (symmetry)</div>
+      <div class="font-semibold text-pink-300 text-sm mb-3">🪞 Mirror Functions (Symmetry)</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -177,7 +192,7 @@
     </div>
 
     <!-- Color by number -->
-    <div class="rounded-xl p-4" style="background:#2a1a2e;border:1px solid #7c3aed;">
+    <div class="rounded-xl p-4 hidden" style="background:#2a1a2e;border:1px solid #7c3aed;">
       <div class="font-semibold text-purple-300 text-sm mb-3">🎨 Color by Number</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
@@ -197,7 +212,7 @@
 
     <!-- Path sums -->
     <div class="rounded-xl p-4" style="background:#1a2e1f;border:1px solid #16a34a;">
-      <div class="font-semibold text-green-300 text-sm mb-3">➕ Sumowanie ścieżek</div>
+      <div class="font-semibold text-green-300 text-sm mb-3">➕ Accumulators (Path Sums)</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -216,7 +231,7 @@
 
     <!-- Math maze -->
     <div class="rounded-xl p-4" style="background:#2e1a1a;border:1px solid #dc2626;">
-      <div class="font-semibold text-red-300 text-sm mb-3">➗ Math Maze</div>
+      <div class="font-semibold text-red-300 text-sm mb-3">➗ Decision Trees (Math Maze)</div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -235,7 +250,7 @@
 
     <!-- Word search -->
     <div class="rounded-xl p-4" style="background:#1a2e1a;border:1px solid #16a34a;">
-      <div class="font-semibold text-emerald-300 text-sm mb-3">📝 Wykreślanka (krzyżówka)</div>
+      <div class="font-semibold text-emerald-300 text-sm mb-3">📝 Find the Keywords (Word Search)</div>
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="text-xs mb-0">Liczba</label>
@@ -244,8 +259,15 @@
         <div>
           <label class="text-xs mb-0">Temat</label>
           <select id="wordsearch_theme" class="input text-sm py-1">
+            <optgroup label="🤖 Little Vibe Coders">
+              <option value="ai_kids_basics_en" selected>Vol.1 — Basics</option>
+              <option value="ai_kids_prompting_en">Vol.2 — Prompting</option>
+              <option value="ai_kids_loops_en">Vol.3 — Loops & Logic</option>
+              <option value="ai_kids_constraints_en">Vol.4 — Constraints</option>
+              <option value="ai_kids_director_en">Vol.5 — AI Director</option>
+            </optgroup>
             <optgroup label="🇬🇧 English">
-              <option value="animals_en" selected>Animals</option>
+              <option value="animals_en">Animals</option>
               <option value="fruits_en">Fruits</option>
               <option value="colors_en">Colors</option>
               <option value="family_en">Family</option>
@@ -285,7 +307,7 @@
       </div>
     </div>
 
-    <div>
+    <div class="hidden">
       <label>🎨 Twoje kolorowanki <span class="text-slate-500">(opcjonalne — zostaną dołączone naprzemiennie)</span></label>
       <div class="upload-zone">
         <input id="coloring_pages" type="file" accept="image/*" multiple class="hidden"/>
@@ -365,6 +387,68 @@
 
 {% block scripts %}
 <script>
+// --- Little Vibe Coders preset loader ---
+async function loadPresetList() {
+  try {
+    const res = await fetch('/kdp/activity/presets');
+    const data = await res.json();
+    const sel = document.getElementById('series_preset');
+    for (const p of data.presets) {
+      const opt = document.createElement('option');
+      opt.value = p.key;
+      opt.textContent = p.label;
+      sel.appendChild(opt);
+    }
+  } catch (e) {
+    console.error('Preset list load failed', e);
+  }
+}
+
+async function applyPreset(key) {
+  if (!key) {
+    document.getElementById('preset_info').classList.add('hidden');
+    return;
+  }
+  try {
+    const res = await fetch('/kdp/activity/preset/' + encodeURIComponent(key));
+    if (!res.ok) throw new Error('preset fetch failed');
+    const p = await res.json();
+
+    // Fill all n_* fields from mix
+    for (const [field, value] of Object.entries(p.mix || {})) {
+      const el = document.getElementById(field);
+      if (el) el.value = value;
+    }
+    // Fill all difficulty fields
+    for (const [field, value] of Object.entries(p.difficulty || {})) {
+      const el = document.getElementById(field);
+      if (el) el.value = value;
+    }
+    // Wordsearch theme
+    if (p.wordsearch_theme) {
+      const el = document.getElementById('wordsearch_theme');
+      if (el) el.value = p.wordsearch_theme;
+    }
+
+    // Show preset info
+    const info = document.getElementById('preset_info');
+    const totalPages = Object.values(p.mix).reduce((a,b) => a+b, 0);
+    info.innerHTML =
+      '<strong>Vol.' + p.volume + '</strong> — ' + p.subtitle + '<br>' +
+      '<strong>' + totalPages + ' activity pages</strong> · ' +
+      'wordsearch theme: ' + p.wordsearch_theme;
+    info.classList.remove('hidden');
+  } catch (e) {
+    console.error('Apply preset failed', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadPresetList();
+  const sel = document.getElementById('series_preset');
+  if (sel) sel.addEventListener('change', (e) => applyPreset(e.target.value));
+});
+
 let currentJobId = null;
 let pdfJobId     = null;
 
