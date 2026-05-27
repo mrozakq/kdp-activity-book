@@ -206,10 +206,11 @@ def render_intro_page(metadata: dict) -> Image.Image:
     draw.text((cx, 220), 'How to Use This Book',
               anchor='mt', fill='black', font=tfont)
     description = metadata.get('description') or (
-        "This book is packed with fun activities for early learners. "
-        "Mazes build problem-solving. Counting pages introduce numbers. "
-        "Color-by-number pages teach colors and patience. Mirror drawing "
-        "grows fine motor skills.\n\n"
+        "This book is packed with puzzles for kids learning to think "
+        "clearly. Mazes build problem-solving. Patterns train the eye "
+        "to spot rules. Mirror Functions and Drawing Grids grow fine "
+        "motor skills. Sudoku and Magic Squares teach the patience of "
+        "trying again.\n\n"
         "Pages can be done in any order. Sit with your child for the "
         "first few - show them where to start and praise effort over "
         "perfection.\n\n"

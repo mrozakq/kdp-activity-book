@@ -167,7 +167,7 @@ def activity_run():
                     img = generate_maze_image(
                         difficulty=difficulty,
                         seed=seed_base + n,
-                        title=f'Maze {n}',
+                        title=f'Prompt Path {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -178,7 +178,7 @@ def activity_run():
                         size_key=sudoku_size,
                         difficulty=sudoku_difficulty,
                         seed=seed_base + 2000 + n,
-                        title=f'Sudoku {n}',
+                        title=f'Constraints {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -189,7 +189,7 @@ def activity_run():
                         theme=wordsearch_theme,
                         difficulty=wordsearch_difficulty,
                         seed=seed_base + 3000 + n,
-                        title=f'Word Search {n}',
+                        title=f'Find the Keywords {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -208,7 +208,7 @@ def activity_run():
                     img = generate_magic_square_image(
                         difficulty=magic_difficulty,
                         seed=seed_base + 4000 + n,
-                        title=f'Magic Square {n}',
+                        title=f'Balance the Grid {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -218,7 +218,7 @@ def activity_run():
                     img = generate_dot_grid_image(
                         difficulty=dotgrid_difficulty,
                         seed=seed_base + 4000 + n,
-                        title=f'Drawing Grid {n}',
+                        title=f'Draw the Output {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -228,7 +228,7 @@ def activity_run():
                     img = generate_counting_image(
                         difficulty=counting_difficulty,
                         seed=seed_base + 5000 + n,
-                        title=f'How Many? {n}',
+                        title=f'Count the Tokens {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -238,7 +238,7 @@ def activity_run():
                     img = generate_pattern_image(
                         difficulty=pattern_difficulty,
                         seed=seed_base + 6000 + n,
-                        title=f'What Comes Next? {n}',
+                        title=f'Loop It {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -248,7 +248,7 @@ def activity_run():
                     img = generate_symmetry_image(
                         difficulty=symmetry_difficulty,
                         seed=seed_base + 7000 + n,
-                        title=f'Symmetry {n}',
+                        title=f'Mirror Function {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -268,7 +268,7 @@ def activity_run():
                     img = generate_path_sums_image(
                         difficulty=pathsum_difficulty,
                         seed=seed_base + 9000 + n,
-                        title=f'Path Sum {n}',
+                        title=f'Accumulator {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
@@ -278,7 +278,7 @@ def activity_run():
                     img = generate_math_maze_image(
                         difficulty=mathmaze_difficulty,
                         seed=seed_base + 10000 + n,
-                        title=f'Math Maze {n}',
+                        title=f'Decision Tree {n}',
                         canvas_size=canvas,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
