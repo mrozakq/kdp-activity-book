@@ -205,12 +205,15 @@ def render_intro_page(metadata: dict) -> Image.Image:
     bfont = get_body_font(66)
     draw.text((cx, 220), 'How to Use This Book',
               anchor='mt', fill='black', font=tfont)
-    description = metadata.get('description') or (
+    # NOTE: intentionally ignore metadata['description'] — that field is for
+    # Amazon listing copy (marketing prose). The intro page uses a fixed,
+    # child-friendly text that fits the Little Vibe Coders series.
+    description = (
         "This book is packed with puzzles for kids learning to think "
-        "clearly. Mazes build problem-solving. Patterns train the eye "
-        "to spot rules. Mirror Functions and Drawing Grids grow fine "
-        "motor skills. Sudoku and Magic Squares teach the patience of "
-        "trying again.\n\n"
+        "clearly. Mazes build problem-solving. Pattern pages train the "
+        "eye to spot rules. Mirror Functions and Drawing Grids grow "
+        "fine motor skills. Sudoku and Magic Squares teach the patience "
+        "of trying again.\n\n"
         "Pages can be done in any order. Sit with your child for the "
         "first few - show them where to start and praise effort over "
         "perfection.\n\n"
