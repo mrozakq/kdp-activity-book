@@ -420,10 +420,13 @@ def render_great_job_page() -> Image.Image:
 
 # --- answer key (Etap 2B) ---------------------------------------------
 
-# Types whose solution we can render in this turn. Hard types (maze, pathsum,
-# mathmaze, wordsearch) need path/circle overlays — they arrive in 2B-2 and are
-# simply skipped here (their sidecar JSON is still written by phase 1).
-_KEY_RENDERABLE = {'counting', 'pattern', 'sudoku', 'magic'}
+# Types whose solution we can render in the answer key. Easy types print a
+# value/text/filled-grid; hard types (maze, pathsum, mathmaze, wordsearch) shade
+# the solution cells gray under the grid/letters/walls.
+_KEY_RENDERABLE = {'counting', 'pattern', 'sudoku', 'magic',
+                   'pathsum', 'mathmaze', 'wordsearch', 'maze'}
+
+_PATH_FILL = (210, 210, 210)  # light gray highlight for solution cells
 
 
 def _load_solutions(pages):
@@ -458,10 +461,60 @@ def _draw_mini_grid(draw, grid, left, top, cell, font, line_w=4):
                       str(grid[r][c]), anchor='mm', fill='black', font=font)
 
 
+def _draw_grid_with_path(draw, grid, path_cells, left, top, cell,
+                         font, line_w=3):
+    """Mini number/letter grid with solution cells shaded gray. path_cells: set of (r,c)."""
+    n_rows, n_cols = len(grid), len(grid[0])
+    # 1) gray fill on path cells first
+    for (r, c) in path_cells:
+        x0 = left + c * cell; y0 = top + r * cell
+        draw.rectangle([(x0, y0), (x0 + cell, y0 + cell)], fill=_PATH_FILL)
+    # 2) grid lines
+    for i in range(n_rows + 1):
+        y = top + i * cell
+        draw.line([(left, y), (left + n_cols * cell, y)], fill='black', width=line_w)
+    for j in range(n_cols + 1):
+        x = left + j * cell
+        draw.line([(x, top), (x, top + n_rows * cell)], fill='black', width=line_w)
+    # 3) digits / letters
+    for r in range(n_rows):
+        for c in range(n_cols):
+            draw.text((left + c * cell + cell // 2, top + r * cell + cell // 2),
+                      str(grid[r][c]), anchor='mm', fill='black', font=font)
+
+
+def _draw_mini_maze(draw, walls, path_cells, left, top, cell, line_w=2):
+    """Mini maze: shade solution cells gray, then draw walls on top."""
+    rows, cols = len(walls), len(walls[0])
+    for (r, c) in path_cells:
+        x0 = left + c * cell; y0 = top + r * cell
+        draw.rectangle([(x0, y0), (x0 + cell, y0 + cell)], fill=_PATH_FILL)
+    for r in range(rows):
+        for c in range(cols):
+            x0 = left + c * cell; y0 = top + r * cell
+            x1 = x0 + cell; y1 = y0 + cell
+            w = walls[r][c]
+            if w[0]: draw.line([(x0, y0), (x1, y0)], fill='black', width=line_w)
+            if w[1]: draw.line([(x1, y0), (x1, y1)], fill='black', width=line_w)
+            if w[2]: draw.line([(x0, y1), (x1, y1)], fill='black', width=line_w)
+            if w[3]: draw.line([(x0, y0), (x0, y1)], fill='black', width=line_w)
+
+
+def _wordsearch_cells(placements):
+    """Set of (r,c) cells covered by placed words (for highlighting)."""
+    cells = set()
+    for p in placements:
+        word, r, c, dr, dc = p[0], p[1], p[2], p[3], p[4]
+        for i in range(len(word)):
+            cells.add((r + dr * i, c + dc * i))
+    return cells
+
+
 def render_answer_key_pages(solutions):
-    """Return a list of CONTENT-sized 'Answers' pages for the renderable types
-    (counting, pattern, sudoku, magic). Overflows onto extra pages as needed.
-    Hard types are skipped this turn."""
+    """Return a list of CONTENT-sized 'Answers' pages for all renderable types
+    (counting, pattern, sudoku, magic, pathsum, mathmaze, wordsearch, maze).
+    Number/letter/maze grids shade the solution cells gray. Overflows onto extra
+    pages as needed. Types without a sidecar are simply absent from `solutions`."""
     order_idx = {k: i for i, k in enumerate(TOC_ORDER)}
     items = [s for s in solutions if s.get('type') in _KEY_RENDERABLE]
     items.sort(key=lambda s: (order_idx.get(s.get('type'), 99), s.get('n', 0)))
@@ -522,6 +575,80 @@ def render_answer_key_pages(solutions):
                                        anchor='lt', fill='black', font=label_font)
                     state['y'] += 72
                 state['y'] += 16
+        elif t in ('pathsum', 'mathmaze'):  # number grids, 3 per row, path shaded
+            cols = 3
+            col_w = (CONTENT_W - 2 * margin) // cols
+            for i in range(0, len(grp), cols):
+                row = grp[i:i + cols]
+                prep, row_h = [], 0
+                for s in row:
+                    grid = s['data']['grid']
+                    gsize = len(grid)
+                    cell = min((col_w - 40) // gsize, 70)
+                    pcells = {tuple(rc) for rc in s['data'].get('path', [])}
+                    prep.append((grid, cell, pcells, s))
+                    row_h = max(row_h, 60 + gsize * cell + 50)
+                ensure(row_h)
+                ytop = state['y']
+                for j, (grid, cell, pcells, s) in enumerate(prep):
+                    x = margin + j * col_w
+                    cap = s.get('title')
+                    if t == 'mathmaze':
+                        rule, param = s['data'].get('rule'), s['data'].get('param')
+                        if rule == 'multiple' and param:
+                            cap = f"{cap} (×{param})"
+                        elif rule in ('even', 'odd'):
+                            cap = f"{cap} ({rule})"
+                    state['draw'].text((x, ytop), cap, anchor='lt',
+                                       fill='black', font=cap_font)
+                    _draw_grid_with_path(state['draw'], grid, pcells,
+                                         x, ytop + 60, cell, grid_font)
+                state['y'] = ytop + row_h
+        elif t == 'wordsearch':  # letter grids, 2 per row, words shaded
+            cols = 2
+            col_w = (CONTENT_W - 2 * margin) // cols
+            for i in range(0, len(grp), cols):
+                row = grp[i:i + cols]
+                prep, row_h = [], 0
+                for s in row:
+                    grid = s['data']['grid']
+                    gsize = len(grid)
+                    cell = (col_w - 40) // gsize
+                    wcells = _wordsearch_cells(s['data'].get('placements', []))
+                    wsfont = get_body_font(max(28, min(int(cell * 0.6), 56)))
+                    prep.append((grid, cell, wcells, wsfont, s))
+                    row_h = max(row_h, 60 + gsize * cell + 50)
+                ensure(row_h)
+                ytop = state['y']
+                for j, (grid, cell, wcells, wsfont, s) in enumerate(prep):
+                    x = margin + j * col_w
+                    state['draw'].text((x, ytop), s.get('title'), anchor='lt',
+                                       fill='black', font=cap_font)
+                    _draw_grid_with_path(state['draw'], grid, wcells,
+                                         x, ytop + 60, cell, wsfont)
+                state['y'] = ytop + row_h
+        elif t == 'maze':  # maze walls, 2 per row, path shaded
+            cols = 2
+            col_w = (CONTENT_W - 2 * margin) // cols
+            for i in range(0, len(grp), cols):
+                row = grp[i:i + cols]
+                prep, row_h = [], 0
+                for s in row:
+                    walls = s['data']['walls']
+                    mrows, mcols = s['data']['rows'], s['data']['cols']
+                    cell = (col_w - 40) // mcols
+                    pcells = {tuple(rc) for rc in s['data'].get('path', [])}
+                    prep.append((walls, cell, mrows, pcells, s))
+                    row_h = max(row_h, 60 + mrows * cell + 50)
+                ensure(row_h)
+                ytop = state['y']
+                for j, (walls, cell, mrows, pcells, s) in enumerate(prep):
+                    x = margin + j * col_w
+                    state['draw'].text((x, ytop), s.get('title'), anchor='lt',
+                                       fill='black', font=cap_font)
+                    _draw_mini_maze(state['draw'], walls, pcells,
+                                    x, ytop + 60, cell)
+                state['y'] = ytop + row_h
         else:  # sudoku / magic — pack grids 3 per row
             cols = 3
             col_w = (CONTENT_W - 2 * margin) // cols
