@@ -28,6 +28,7 @@
       <select id="series_preset" class="input text-sm w-full">
         <option value="">— Manual settings —</option>
       </select>
+      <input type="hidden" id="preset_key" name="preset_key" value="">
       <div id="preset_info" class="text-xs text-slate-400 mt-2 hidden"></div>
     </div>
 
@@ -405,6 +406,9 @@ async function loadPresetList() {
 }
 
 async function applyPreset(key) {
+  // Keep hidden field in sync so buildBook() can send the active preset.
+  // Manual mode (no key) => empty string => backend uses neutral intro.
+  document.getElementById('preset_key').value = key || '';
   if (!key) {
     document.getElementById('preset_info').classList.add('hidden');
     return;
@@ -552,6 +556,7 @@ async function buildBook() {
     form.append('age_range',   document.getElementById('book_age_range').value || '3-5');
     form.append('year',        document.getElementById('book_year').value || '2026');
     form.append('description', '');
+    form.append('preset_key',  document.getElementById('preset_key').value || '');
     const res = await fetch('/kdp/activity/build_book', { method:'POST', body: form });
     if (!res.ok) {
       term.textContent = '❌ HTTP ' + res.status + ' — ' + (await res.text()).slice(0, 300);

@@ -393,6 +393,22 @@ def activity_build_book():
         'description': (request.form.get('description') or '').strip(),
     }
 
+    # Series-aware intro: pull chapter_intros + age from the preset by key.
+    # Frontend sends 'preset_key' (the dropdown value). Manual mode = no key.
+    preset_key = (request.form.get('preset_key') or '').strip()
+    if preset_key:
+        try:
+            from tools.activity_bot.series_presets import get_preset
+            _p = get_preset(preset_key)
+            if _p:
+                metadata['chapter_intros'] = _p.get('chapter_intros', {})
+                metadata['series_name']    = _p.get('series_name', '')
+                # age_range from preset wins over the form default if present
+                if _p.get('age_range'):
+                    metadata['age_range'] = _p['age_range']
+        except Exception:
+            pass  # manual/neutral intro if anything is off
+
     jid2 = create_job()
 
     def run():

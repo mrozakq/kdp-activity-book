@@ -191,40 +191,94 @@ def render_copyright_page(metadata: dict) -> Image.Image:
               anchor='mm', fill='black', font=body)
     draw.text((cx, CONTENT_H // 2 + 50), 'For personal use only.',
               anchor='mm', fill=(80, 80, 80), font=small)
-    draw.text((cx, CONTENT_H // 2 + 130),
-              'Adult supervision recommended for children under 5.',
-              anchor='mm', fill=(80, 80, 80), font=small)
+    age = (metadata.get('age_range') or '').strip()
+    # Only show the "under 5" note for books that actually target under-5s.
+    young = age.startswith('3') or age.startswith('4') or age in ('0-5', '2-4')
+    if young:
+        draw.text((cx, CONTENT_H // 2 + 130),
+                  'Adult supervision recommended for children under 5.',
+                  anchor='mm', fill=(80, 80, 80), font=small)
     return img
 
 
-def render_intro_page(metadata: dict) -> Image.Image:
+def render_intro_page(metadata: dict, toc_rows: list) -> Image.Image:
+    """How to Use This Book — series-aware.
+
+    If metadata carries 'chapter_intros' (from a series preset), list the
+    activity TYPES actually present in this volume (derived from toc_rows),
+    each with its one-line intro. Otherwise fall back to a neutral, honest
+    blurb that makes no claims about specific activity types or ages.
+    """
     img = _content_page()
     draw = ImageDraw.Draw(img)
     cx = CONTENT_W // 2
     tfont = get_title_font(150)
-    bfont = get_body_font(66)
-    draw.text((cx, 220), 'How to Use This Book',
+    bfont = get_body_font(60)
+    lead_font = get_body_font(64)
+    name_font = get_body_font(58)
+
+    draw.text((cx, 200), 'How to Use This Book',
               anchor='mt', fill='black', font=tfont)
-    # NOTE: intentionally ignore metadata['description'] — that field is for
-    # Amazon listing copy (marketing prose). The intro page uses a fixed,
-    # child-friendly text that fits the Little Vibe Coders series.
-    description = (
-        "This book is packed with puzzles for kids learning to think "
-        "clearly. Mazes build problem-solving. Pattern pages train the "
-        "eye to spot rules. Mirror Functions and Drawing Grids grow "
-        "fine motor skills. Sudoku and Magic Squares teach the patience "
-        "of trying again.\n\n"
-        "Pages can be done in any order. Sit with your child for the "
-        "first few - show them where to start and praise effort over "
-        "perfection.\n\n"
-        "Use a soft pencil so mistakes are easy to fix. Have fun!"
-    )
-    y = 560
-    for para in description.split('\n\n'):
-        for line in _wrap(para, bfont, CONTENT_W - 200, draw):
+
+    intros = metadata.get('chapter_intros') or {}
+
+    # Map a TOC label back to its activity key so we can fetch the right intro.
+    label_to_key = {}
+    for k, lbl in TOC_LABELS.items():
+        label_to_key.setdefault(lbl, k)
+    for k, lbl in SECTION_NAMES.items():
+        label_to_key.setdefault(lbl, k)
+
+    y = 470
+
+    if intros:
+        # Lead paragraph — generic series framing, no per-type claims here.
+        lead = ("Each kind of puzzle teaches one way of thinking. "
+                "Here's what's inside and why it matters:")
+        for line in _wrap(lead, lead_font, CONTENT_W - 220, draw):
+            draw.text((cx, y), line, anchor='mt', fill='black', font=lead_font)
+            y += 88
+        y += 50
+
+        # Dynamic list: only types present in this volume, in TOC order.
+        for label, _count in toc_rows:
+            key = label_to_key.get(label)
+            blurb = intros.get(key, '') if key else ''
+            # Type name (bold-ish via title font small), left-aligned block.
+            draw.text((150, y), label, anchor='lt', fill='black',
+                      font=get_body_font(66))
+            y += 92
+            if blurb:
+                for line in _wrap(blurb, name_font, CONTENT_W - 340, draw):
+                    draw.text((230, y), line, anchor='lt',
+                              fill=(70, 70, 70), font=name_font)
+                    y += 76
+            y += 46
+            if y > CONTENT_H - 360:   # safety: don't overflow the page
+                break
+
+        # Closing tip.
+        y = min(y + 20, CONTENT_H - 260)
+        tip = "Use a soft pencil so mistakes are easy to fix. Have fun!"
+        for line in _wrap(tip, bfont, CONTENT_W - 220, draw):
             draw.text((cx, y), line, anchor='mt', fill='black', font=bfont)
-            y += 100
-        y += 60
+            y += 88
+    else:
+        # Neutral fallback (manual mode) — NO mention of specific activity
+        # types or of children under 5. Honest and generic.
+        description = (
+            "This book is full of puzzles that build focus, problem-solving, "
+            "and fine-motor skills. Pages can be done in any order.\n\n"
+            "Sit with your child for the first few — show them where to start "
+            "and praise effort over perfection.\n\n"
+            "Use a soft pencil so mistakes are easy to fix. Have fun!"
+        )
+        y = 560
+        for para in description.split('\n\n'):
+            for line in _wrap(para, bfont, CONTENT_W - 200, draw):
+                draw.text((cx, y), line, anchor='mt', fill='black', font=bfont)
+                y += 100
+            y += 60
     return img
 
 
@@ -394,7 +448,7 @@ def build_activity_book(pages: List[str], metadata: dict,
 
     half_p  = save_tmp('00_dedication', render_dedication_page(metadata))
     copy_p  = save_tmp('01_copyright',  render_copyright_page(metadata))
-    intro_p = save_tmp('02_intro',      render_intro_page(metadata))
+    intro_p = save_tmp('02_intro',      render_intro_page(metadata, toc_rows))
     toc_p   = save_tmp('03_toc',        render_toc_page(toc_rows))
     great_p = save_tmp('99_greatjob',   render_great_job_page())
 
