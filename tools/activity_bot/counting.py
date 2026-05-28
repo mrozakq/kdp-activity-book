@@ -76,7 +76,7 @@ def _scatter_non_overlapping(rng, n, area, min_dist):
     return placed
 
 
-def render_counting(canvas_size, title, kind, count, seed):
+def render_counting(canvas_size, title, kind, count, seed, size_scale: float = 1.0):
     cw, ch = canvas_size
     rng = random.Random(seed)
 
@@ -89,7 +89,9 @@ def render_counting(canvas_size, title, kind, count, seed):
     area_w = obj_area[2] - obj_area[0]
     area_h = obj_area[3] - obj_area[1]
 
-    obj_size = int(min(area_w, area_h) / max(4, math.sqrt(count) * 1.6))
+    obj_size = int(size_scale * min(area_w, area_h)
+                   / max(4, math.sqrt(count) * 1.6))
+    obj_size = max(60, obj_size)   # floor: never invisible
     min_dist = obj_size * 1.2
 
     img = Image.new('RGB', (cw, ch), 'white')
@@ -134,11 +136,24 @@ def generate_counting_image(difficulty: str, seed: int, title: str,
     rng = random.Random(seed)
     count = rng.randint(lo, hi)
     kind = rng.choice(OBJECT_TYPES)
-    img, placed = render_counting(canvas_size, title, kind, count, seed)
-    # The drawn count IS the answer — the scatter must have placed them all.
-    assert placed == count, (
-        f'counting scatter under-filled: wanted {count}, placed {placed}')
+
+    # The drawn count IS the answer. Try to place the intended `count`, but if
+    # the scatter under-fills, shrink objects slightly and retry — deterministic
+    # per seed. We NEVER assert/raise: whatever ends up drawn is the truth, and
+    # the answer key reports exactly that.
+    best_img, best_placed = None, -1
+    for attempt in range(4):
+        # shrink factor grows with attempt: 1.0, 0.88, 0.78, 0.70
+        shrink = [1.0, 0.88, 0.78, 0.70][attempt]
+        img, placed = render_counting(canvas_size, title, kind, count, seed,
+                                      size_scale=shrink)
+        if placed > best_placed:
+            best_img, best_placed = img, placed
+        if placed == count:
+            break
+
+    img, placed = best_img, best_placed
     if return_solution:
         return img, {'type': 'counting',
-                     'data': {'count': count, 'kind': kind}}
+                     'data': {'count': placed, 'kind': kind}}
     return img

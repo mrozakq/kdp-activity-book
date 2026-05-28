@@ -165,10 +165,20 @@ def test_counting_solution():
         d = _unpack(generate_counting_image(diff, 4, 'Count',
                                             canvas_size=SMALL, return_solution=True),
                     'counting')
-        # The generator asserts placed == count internally; here we sanity-check
-        # the reported answer is in range and kind is valid.
-        assert lo <= d['count'] <= hi, f"count {d['count']} out of range {lo}-{hi}"
+        # 'count' reports what was actually drawn (placed), so it may be < lo
+        # if the scatter under-filled — but it must be positive and never
+        # exceed the intended maximum.
+        assert 0 < d['count'] <= hi, f"count {d['count']} out of (0, {hi}]"
         assert d['kind'] in OBJECT_TYPES
+
+
+def test_counting_never_raises_and_answer_matches():
+    from tools.activity_bot.counting import generate_counting_image
+    for diff in ['easy', 'medium', 'hard']:
+        for s in range(60):
+            img, sol = generate_counting_image(diff, s, 'T', return_solution=True)
+            assert sol['data']['count'] > 0          # zawsze coś narysowane
+            assert img is not None                   # nigdy nie wywala
 
 
 # --------------------------------------------------------------------------
