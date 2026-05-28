@@ -202,20 +202,18 @@ def render_copyright_page(metadata: dict) -> Image.Image:
 
 
 def render_intro_page(metadata: dict, toc_rows: list) -> Image.Image:
-    """How to Use This Book — series-aware.
+    """How to Use This Book — series-aware, single-page adaptive.
 
     If metadata carries 'chapter_intros' (from a series preset), list the
     activity TYPES actually present in this volume (derived from toc_rows),
-    each with its one-line intro. Otherwise fall back to a neutral, honest
-    blurb that makes no claims about specific activity types or ages.
+    each with its one-line intro. Font sizes and spacing scale DOWN as the
+    number of types grows, so every type always fits on one page (no silent
+    truncation). Otherwise fall back to a neutral, honest blurb.
     """
     img = _content_page()
     draw = ImageDraw.Draw(img)
     cx = CONTENT_W // 2
     tfont = get_title_font(150)
-    bfont = get_body_font(60)
-    lead_font = get_body_font(64)
-    name_font = get_body_font(58)
 
     draw.text((cx, 200), 'How to Use This Book',
               anchor='mt', fill='black', font=tfont)
@@ -229,43 +227,10 @@ def render_intro_page(metadata: dict, toc_rows: list) -> Image.Image:
     for k, lbl in SECTION_NAMES.items():
         label_to_key.setdefault(lbl, k)
 
-    y = 470
-
-    if intros:
-        # Lead paragraph — generic series framing, no per-type claims here.
-        lead = ("Each kind of puzzle teaches one way of thinking. "
-                "Here's what's inside and why it matters:")
-        for line in _wrap(lead, lead_font, CONTENT_W - 220, draw):
-            draw.text((cx, y), line, anchor='mt', fill='black', font=lead_font)
-            y += 88
-        y += 50
-
-        # Dynamic list: only types present in this volume, in TOC order.
-        for label, _count in toc_rows:
-            key = label_to_key.get(label)
-            blurb = intros.get(key, '') if key else ''
-            # Type name (bold-ish via title font small), left-aligned block.
-            draw.text((150, y), label, anchor='lt', fill='black',
-                      font=get_body_font(66))
-            y += 92
-            if blurb:
-                for line in _wrap(blurb, name_font, CONTENT_W - 340, draw):
-                    draw.text((230, y), line, anchor='lt',
-                              fill=(70, 70, 70), font=name_font)
-                    y += 76
-            y += 46
-            if y > CONTENT_H - 360:   # safety: don't overflow the page
-                break
-
-        # Closing tip.
-        y = min(y + 20, CONTENT_H - 260)
-        tip = "Use a soft pencil so mistakes are easy to fix. Have fun!"
-        for line in _wrap(tip, bfont, CONTENT_W - 220, draw):
-            draw.text((cx, y), line, anchor='mt', fill='black', font=bfont)
-            y += 88
-    else:
+    if not intros:
         # Neutral fallback (manual mode) — NO mention of specific activity
         # types or of children under 5. Honest and generic.
+        bfont = get_body_font(60)
         description = (
             "This book is full of puzzles that build focus, problem-solving, "
             "and fine-motor skills. Pages can be done in any order.\n\n"
@@ -279,6 +244,96 @@ def render_intro_page(metadata: dict, toc_rows: list) -> Image.Image:
                 draw.text((cx, y), line, anchor='mt', fill='black', font=bfont)
                 y += 100
             y += 60
+        return img
+
+    # --- series mode: pre-measure, then scale to fit one page -------------
+    # Vertical budget for the body (between header and bottom margin).
+    body_top = 470
+    body_bottom = CONTENT_H - 200          # leave room for the closing tip
+    avail = body_bottom - body_top
+
+    rows = [(label, label_to_key.get(label),
+             intros.get(label_to_key.get(label), '')) for label, _c in toc_rows]
+    n = max(1, len(rows))
+
+    # Scale factor by type-count. 6 types -> full size; shrink as n grows.
+    # Tuned so 10 types fit comfortably with the tip still on-page.
+    scale = 1.0
+    if n >= 7:
+        scale = 0.92
+    if n >= 8:
+        scale = 0.82
+    if n >= 9:
+        scale = 0.74
+    if n >= 10:
+        scale = 0.68
+
+    def S(v):  # scaled int, with a sane floor
+        return max(34, int(round(v * scale)))
+
+    lead_font = get_body_font(S(64))
+    name_font = get_body_font(S(66))     # type name
+    blurb_font = get_body_font(S(58))    # intro sentence
+    tip_font = get_body_font(S(60))
+
+    # Spacing, also scaled.
+    lead_lh = S(88)
+    name_lh = S(92)
+    blurb_lh = S(76)
+    gap_after_lead = S(50)
+    gap_after_blurb = S(46)
+
+    # Helper: measure total body height for the current sizes.
+    def measure():
+        h = 0
+        lead = ("Each kind of puzzle teaches one way of thinking. "
+                "Here's what's inside and why it matters:")
+        h += len(_wrap(lead, lead_font, CONTENT_W - 220, draw)) * lead_lh
+        h += gap_after_lead
+        for label, key, blurb in rows:
+            h += name_lh
+            if blurb:
+                h += len(_wrap(blurb, blurb_font, CONTENT_W - 340, draw)) * blurb_lh
+            h += gap_after_blurb
+        return h
+
+    # If still too tall after the count-based scale, shrink iteratively.
+    guard = 0
+    while measure() > avail and guard < 12:
+        scale *= 0.94
+        lead_font = get_body_font(S(64))
+        name_font = get_body_font(S(66))
+        blurb_font = get_body_font(S(58))
+        tip_font = get_body_font(S(60))
+        lead_lh = S(88); name_lh = S(92); blurb_lh = S(76)
+        gap_after_lead = S(50); gap_after_blurb = S(46)
+        guard += 1
+
+    # --- draw ---------------------------------------------------------------
+    y = body_top
+    lead = ("Each kind of puzzle teaches one way of thinking. "
+            "Here's what's inside and why it matters:")
+    for line in _wrap(lead, lead_font, CONTENT_W - 220, draw):
+        draw.text((cx, y), line, anchor='mt', fill='black', font=lead_font)
+        y += lead_lh
+    y += gap_after_lead
+
+    for label, key, blurb in rows:
+        draw.text((150, y), label, anchor='lt', fill='black', font=name_font)
+        y += name_lh
+        if blurb:
+            for line in _wrap(blurb, blurb_font, CONTENT_W - 340, draw):
+                draw.text((230, y), line, anchor='lt',
+                          fill=(70, 70, 70), font=blurb_font)
+                y += blurb_lh
+        y += gap_after_blurb
+
+    # Closing tip — always on-page.
+    tip = "Use a soft pencil so mistakes are easy to fix. Have fun!"
+    y = min(y + S(20), CONTENT_H - 150)
+    for line in _wrap(tip, tip_font, CONTENT_W - 220, draw):
+        draw.text((cx, y), line, anchor='mt', fill='black', font=tip_font)
+        y += S(88)
     return img
 
 
