@@ -146,7 +146,7 @@ def render_sudoku(puzzle, box_rows: int, box_cols: int,
 
 
 def generate_sudoku_image(size_key: str, difficulty: str, seed: int, title: str,
-                          canvas_size=(2550, 3300)):
+                          canvas_size=(2550, 3300), return_solution=False):
     if size_key not in SUDOKU_PRESETS:
         size_key = '4x4'
     size, br, bc, e_g, m_g, h_g = SUDOKU_PRESETS[size_key]
@@ -154,4 +154,9 @@ def generate_sudoku_image(size_key: str, difficulty: str, seed: int, title: str,
 
     solved = _generate_solved(size, br, bc, seed)
     puzzle = _make_puzzle(solved, givens, seed)
-    return render_sudoku(puzzle, br, bc, canvas_size=canvas_size, title=title)
+    img = render_sudoku(puzzle, br, bc, canvas_size=canvas_size, title=title)
+    if return_solution:
+        return img, {'type': 'sudoku',
+                     'data': {'solved': solved, 'box_rows': br,
+                              'box_cols': bc, 'size': size}}
+    return img

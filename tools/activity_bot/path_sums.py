@@ -56,7 +56,7 @@ def _make_puzzle(rows, cols, value_max, seed):
         v = rng.randint(1, value_max)
         grid[r][c] = v
         target += v
-    return grid, target
+    return grid, target, path
 
 
 def render_path_sums(canvas_size, title, grid, target):
@@ -118,8 +118,12 @@ def render_path_sums(canvas_size, title, grid, target):
 
 
 def generate_path_sums_image(difficulty: str, seed: int, title: str,
-                             canvas_size=(2625, 3375)):
+                             canvas_size=(2625, 3375), return_solution=False):
     rows, cols, vmax = DIFFICULTY_PRESETS.get(difficulty,
                                               DIFFICULTY_PRESETS['medium'])
-    grid, target = _make_puzzle(rows, cols, vmax, seed)
-    return render_path_sums(canvas_size, title, grid, target)
+    grid, target, path = _make_puzzle(rows, cols, vmax, seed)
+    img = render_path_sums(canvas_size, title, grid, target)
+    if return_solution:
+        return img, {'type': 'pathsum',
+                     'data': {'path': path, 'target': target, 'grid': grid}}
+    return img

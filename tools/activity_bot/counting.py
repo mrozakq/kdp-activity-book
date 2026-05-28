@@ -129,10 +129,16 @@ def render_counting(canvas_size, title, kind, count, seed):
 
 
 def generate_counting_image(difficulty: str, seed: int, title: str,
-                            canvas_size=(2625, 3375)):
+                            canvas_size=(2625, 3375), return_solution=False):
     lo, hi = DIFFICULTY_PRESETS.get(difficulty, DIFFICULTY_PRESETS['medium'])
     rng = random.Random(seed)
     count = rng.randint(lo, hi)
     kind = rng.choice(OBJECT_TYPES)
-    img, _placed = render_counting(canvas_size, title, kind, count, seed)
+    img, placed = render_counting(canvas_size, title, kind, count, seed)
+    # The drawn count IS the answer — the scatter must have placed them all.
+    assert placed == count, (
+        f'counting scatter under-filled: wanted {count}, placed {placed}')
+    if return_solution:
+        return img, {'type': 'counting',
+                     'data': {'count': count, 'kind': kind}}
     return img

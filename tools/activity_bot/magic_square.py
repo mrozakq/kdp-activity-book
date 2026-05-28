@@ -115,8 +115,12 @@ def render_magic_square(puzzle, magic_sum: int,
 
 
 def generate_magic_square_image(difficulty: str, seed: int, title: str,
-                                canvas_size=(2625, 3375)):
+                                canvas_size=(2625, 3375), return_solution=False):
     cfg = DIFFICULTY_PRESETS.get(difficulty, DIFFICULTY_PRESETS['medium'])
-    puzzle, _full, magic_sum = _make_puzzle(seed, cfg['holes'], cfg['offset'])
-    return render_magic_square(puzzle, magic_sum,
-                               canvas_size=canvas_size, title=title)
+    puzzle, full, magic_sum = _make_puzzle(seed, cfg['holes'], cfg['offset'])
+    img = render_magic_square(puzzle, magic_sum,
+                              canvas_size=canvas_size, title=title)
+    if return_solution:
+        return img, {'type': 'magic',
+                     'data': {'full': full, 'magic_sum': magic_sum}}
+    return img

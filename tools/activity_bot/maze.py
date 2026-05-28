@@ -55,6 +55,44 @@ def generate_maze(rows: int, cols: int, seed: int = 0):
     return walls
 
 
+def solve_maze(walls):
+    """BFS from (0,0) to (rows-1,cols-1) through wall gaps. Returns [(r,c)] path.
+
+    walls[r][c] = [N,E,S,W]; a side==False means an open passage to that
+    neighbour. Entrance/exit punches sit on the outer boundary, so the index
+    guards below keep the search inside the grid.
+    """
+    from collections import deque
+    rows, cols = len(walls), len(walls[0])
+    start, goal = (0, 0), (rows - 1, cols - 1)
+    prev = {start: None}
+    q = deque([start])
+    while q:
+        cur = q.popleft()
+        if cur == goal:
+            break
+        r, c = cur
+        w = walls[r][c]
+        cand = []
+        if not w[0] and r > 0:        cand.append((r - 1, c))
+        if not w[1] and c < cols - 1: cand.append((r, c + 1))
+        if not w[2] and r < rows - 1: cand.append((r + 1, c))
+        if not w[3] and c > 0:        cand.append((r, c - 1))
+        for nb in cand:
+            if nb not in prev:
+                prev[nb] = cur
+                q.append(nb)
+    if goal not in prev:
+        return []   # not expected for a perfect maze
+    path = []
+    n = goal
+    while n is not None:
+        path.append(n)
+        n = prev[n]
+    path.reverse()
+    return path
+
+
 def render_maze(walls, canvas_size=(2550, 3300), title='Maze', line_width=8):
     """
     Render a maze to a PIL image.
@@ -110,10 +148,16 @@ def render_maze(walls, canvas_size=(2550, 3300), title='Maze', line_width=8):
 
 
 def generate_maze_image(difficulty: str, seed: int, title: str,
-                        canvas_size=(2550, 3300)):
+                        canvas_size=(2550, 3300), return_solution=False):
     """Convenience: difficulty preset -> finished PIL image."""
     if difficulty not in DIFFICULTY_PRESETS:
         difficulty = 'medium'
     rows, cols, lw = DIFFICULTY_PRESETS[difficulty]
     walls = generate_maze(rows, cols, seed=seed)
-    return render_maze(walls, canvas_size=canvas_size, title=title, line_width=lw)
+    img = render_maze(walls, canvas_size=canvas_size, title=title, line_width=lw)
+    if return_solution:
+        path = solve_maze(walls)
+        return img, {'type': 'maze',
+                     'data': {'path': path, 'rows': rows, 'cols': cols,
+                              'walls': walls}}
+    return img

@@ -58,7 +58,8 @@ def _random_path(rows, cols, rng):
 def _make_puzzle(rows, cols, rule_kind, rule_params, vlo, vhi, seed):
     rng = random.Random(seed)
     rule, param = _pick_rule(rng, rule_kind, rule_params)
-    path = set(_random_path(rows, cols, rng))
+    path_list = _random_path(rows, cols, rng)
+    path = set(path_list)
 
     matching = [v for v in range(vlo, vhi + 1) if _matches(v, rule, param)]
     non_matching = [v for v in range(vlo, vhi + 1) if not _matches(v, rule, param)]
@@ -75,7 +76,7 @@ def _make_puzzle(rows, cols, rule_kind, rule_params, vlo, vhi, seed):
             else:
                 grid[r][c] = rng.choice(non_matching)
 
-    return grid, rule, param
+    return grid, rule, param, path_list
 
 
 def _rule_text(rule, param):
@@ -141,9 +142,14 @@ def render_math_maze(canvas_size, title, grid, rule, param):
 
 
 def generate_math_maze_image(difficulty: str, seed: int, title: str,
-                             canvas_size=(2625, 3375)):
+                             canvas_size=(2625, 3375), return_solution=False):
     rows, cols, rule_kind, params, (vlo, vhi) = DIFFICULTY_PRESETS.get(
         difficulty, DIFFICULTY_PRESETS['medium'])
-    grid, rule, param = _make_puzzle(rows, cols, rule_kind, params,
-                                     vlo, vhi, seed)
-    return render_math_maze(canvas_size, title, grid, rule, param)
+    grid, rule, param, path_list = _make_puzzle(rows, cols, rule_kind, params,
+                                                vlo, vhi, seed)
+    img = render_math_maze(canvas_size, title, grid, rule, param)
+    if return_solution:
+        return img, {'type': 'mathmaze',
+                     'data': {'path': path_list, 'rule': rule,
+                              'param': param, 'grid': grid}}
+    return img

@@ -82,6 +82,7 @@ def render_pattern(canvas_size, title, difficulty, seed):
     tx, ty = title_position(canvas_size)
     draw.text((tx, ty), title, anchor='mt', fill='black', font=title_font)
 
+    answers = []  # correct shape for each row's '?' cell, top-to-bottom
     for r_idx in range(rows):
         pat = rng.choice(cfg['patterns'])  # e.g. 'AAB'
         n_distinct = len(set(pat))
@@ -92,6 +93,7 @@ def render_pattern(canvas_size, title, difficulty, seed):
         for i in range(cells):
             ch_letter = pat[i % len(pat)]
             sequence.append(shapes[ord(ch_letter) - ord('A')])
+        answers.append(sequence[cells - 1])
         # Last cell: empty (question mark)
         row_y = grid_top + r_idx * cell + cell / 2
         for c_idx in range(cells):
@@ -107,9 +109,13 @@ def render_pattern(canvas_size, title, difficulty, seed):
             else:
                 _draw_object(draw, sequence[c_idx], cx, row_y, obj_size)
 
-    return img
+    return img, answers
 
 
 def generate_pattern_image(difficulty: str, seed: int, title: str,
-                           canvas_size=(2625, 3375)):
-    return render_pattern(canvas_size, title, difficulty, seed)
+                           canvas_size=(2625, 3375), return_solution=False):
+    img, answers = render_pattern(canvas_size, title, difficulty, seed)
+    if return_solution:
+        return img, {'type': 'pattern',
+                     'data': {'answers': answers, 'rows': len(answers)}}
+    return img

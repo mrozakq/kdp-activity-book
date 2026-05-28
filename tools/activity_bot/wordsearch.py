@@ -181,7 +181,7 @@ def render_wordsearch(grid, words_display, canvas_size=(2550, 3300),
 
 
 def generate_wordsearch_image(theme: str, difficulty: str, seed: int, title: str,
-                              canvas_size=(2550, 3300)):
+                              canvas_size=(2550, 3300), return_solution=False):
     if theme not in THEMES:
         theme = 'animals_en'
     rows, cols = GRID_PRESETS.get(difficulty, GRID_PRESETS['medium'])
@@ -191,12 +191,16 @@ def generate_wordsearch_image(theme: str, difficulty: str, seed: int, title: str
     # Map of original → ASCII-upper placement form
     grid_form = [_strip_diacritics(w) for w in original_words]
 
-    grid, _, skipped = _place_words(grid_form, rows, cols, rng)
+    grid, placements, skipped = _place_words(grid_form, rows, cols, rng)
     _fill_empty(grid, rng)
 
     # Display original (with PL diacritics) in the legend so kids see correct spelling
     placed_display = [orig for orig, gf in zip(original_words, grid_form)
                       if gf not in skipped]
 
-    return render_wordsearch(grid, placed_display,
-                             canvas_size=canvas_size, title=title)
+    img = render_wordsearch(grid, placed_display,
+                            canvas_size=canvas_size, title=title)
+    if return_solution:
+        return img, {'type': 'wordsearch',
+                     'data': {'placements': placements, 'grid': grid}}
+    return img
