@@ -16,6 +16,27 @@
   <div class="card p-6 space-y-5">
     <h2 class="font-semibold text-white">⚙️ Ustawienia</h2>
 
+    <!-- LITTLE VIBE CODERS — series cover preset (auto-fills everything) -->
+    <div class="bg-slate-800 rounded-lg p-4 border border-indigo-700">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="text-2xl">🤖</span>
+        <div>
+          <div class="font-semibold text-slate-100">Little Vibe Coders — okładka serii</div>
+          <div class="text-xs text-slate-400">Wybierz tom — wypełni wszystkie pola, ustawi tryb Kids i grzbiet z liczby stron</div>
+        </div>
+      </div>
+      <select id="series_cover_preset" class="input text-sm w-full"
+              onchange="applySeriesCoverPreset(this.value)">
+        <option value="">— ręczne ustawienia —</option>
+        <option value="vibe_v1_first_steps">Vol.1 — First Steps</option>
+        <option value="vibe_v2_prompting_power">Vol.2 — Prompting Power</option>
+        <option value="vibe_v3_loops_and_logic">Vol.3 — Loops &amp; Logic</option>
+        <option value="vibe_v4_solving_constraints">Vol.4 — Solving Constraints</option>
+        <option value="vibe_v5_ai_director">Vol.5 — AI Director</option>
+      </select>
+      <div id="series_cover_info" class="text-xs text-slate-400 mt-2 hidden"></div>
+    </div>
+
     <!-- Book-type preset (FIRST field — auto-fills the copy below) -->
     <div>
       <label>📚 Typ książki <span class="text-slate-500">(auto-uzupełnia teksty — można potem edytować)</span></label>
@@ -306,6 +327,54 @@ function applyPreset() {
   document.getElementById('cta_text').value  = p.cta;
   document.getElementById('author_bio').value = p.bio;
   document.getElementById('tagline').value   = subPageCount(p.tagline);
+}
+
+// ── Little Vibe Coders series cover preset (full auto-fill via API) ──
+async function applySeriesCoverPreset(key) {
+  const info = document.getElementById('series_cover_info');
+  if (!key) { info.classList.add('hidden'); return; }
+  try {
+    const res = await fetch('/kdp/cover/preset/' + encodeURIComponent(key));
+    if (!res.ok) throw new Error('preset fetch failed');
+    const d = await res.json();
+    const c = d.cover || {};
+
+    // Title / subtitle / author from the preset top-level fields
+    if (d.title)    document.getElementById('title').value    = d.title;
+    if (d.subtitle) document.getElementById('subtitle').value = d.subtitle;
+    if (d.author)   document.getElementById('author').value   = d.author;
+
+    // Force Kids mode, then refresh dependent UI (palette filter, kids fields)
+    const kidsRadio = document.querySelector('input[name="cover_mode"][value="kids"]');
+    if (kidsRadio) kidsRadio.checked = true;
+    updateMode();
+
+    // Palette must be set AFTER updateMode() (it filters/normalizes options)
+    const palSel = document.getElementById('palette');
+    if (c.palette && [...palSel.options].some(o => o.value === c.palette)) {
+      palSel.value = c.palette;
+    }
+    if (c.bg_theme && document.getElementById('bg_theme'))
+      document.getElementById('bg_theme').value = c.bg_theme;
+    if (c.badge_text !== undefined) document.getElementById('badge_text').value = c.badge_text;
+    if (c.hook !== undefined)       document.getElementById('hook').value       = c.hook;
+    if (c.cta !== undefined)        document.getElementById('cta_text').value    = c.cta;
+    if (c.tagline !== undefined)    document.getElementById('tagline').value     = c.tagline;
+
+    // Page count drives the spine width — set it and refresh the spine readout
+    if (c.pages) {
+      document.getElementById('pages').value = c.pages;
+      updateSpineInfo();
+    }
+
+    info.innerHTML =
+      '<strong>Vol.' + d.volume + '</strong> — ' + (d.subtitle || '') + '<br>' +
+      (c.pages || '?') + ' stron · paleta ' + (c.palette || '') +
+      ' · motyw ' + (c.bg_theme || '') + ' · badge ' + (c.badge_text || '');
+    info.classList.remove('hidden');
+  } catch (e) {
+    console.error('Apply series cover preset failed', e);
+  }
 }
 
 function updateSpineInfo() {
