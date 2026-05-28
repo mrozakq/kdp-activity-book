@@ -9,6 +9,7 @@ venv/
 # Generated artifacts
 start.log
 sample_*.pdf
+dist_kdp/
 tools/cover_generator/output/
 tools/coloring_bot/test_*.png
 tools/coloring_bot/preview_*.png
