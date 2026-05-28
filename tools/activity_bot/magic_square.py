@@ -54,7 +54,15 @@ def _symmetries(square):
 
 def _make_puzzle(seed: int, holes: int, offset: int = 0):
     rng = random.Random(seed)
-    base = rng.choice(_symmetries(LO_SHU))
+    syms = _symmetries(LO_SHU)
+    # Pick the symmetry deterministically from the seed so that consecutive
+    # puzzles in a volume (seeds differ by 1) get 8 *distinct* orientations —
+    # consecutive `seed % 8` values cycle through all 8, guaranteeing the first
+    # 8 magic squares in a volume never share a solution. We still call
+    # rng.choice() to keep the RNG stream identical, so hole positions (the
+    # next rng consumer) are byte-for-byte unchanged vs. before this fix.
+    rng.choice(syms)               # preserve RNG consumption (do not remove)
+    base = syms[seed % 8]
     full = [[v + offset for v in row] for row in base]
     magic_sum = sum(full[0])
 
