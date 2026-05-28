@@ -265,6 +265,7 @@
 <script>
 let currentJobId = null;
 let seriesBullets = [];   // bullets from the active series preset ('' = manual = none)
+let seriesTypes = [];     // activity types in the active series preset (procedural blurb)
 
 // ── Book-type presets ───────────────────────────────────────────────
 const COVER_PRESETS = {
@@ -337,13 +338,14 @@ function applyPreset() {
 // ── Little Vibe Coders series cover preset (full auto-fill via API) ──
 async function applySeriesCoverPreset(key) {
   const info = document.getElementById('series_cover_info');
-  if (!key) { seriesBullets = []; info.classList.add('hidden'); return; }
+  if (!key) { seriesBullets = []; seriesTypes = []; info.classList.add('hidden'); return; }
   try {
     const res = await fetch('/kdp/cover/preset/' + encodeURIComponent(key));
     if (!res.ok) throw new Error('preset fetch failed');
     const d = await res.json();
     const c = d.cover || {};
     seriesBullets = Array.isArray(c.bullets) ? c.bullets : [];
+    seriesTypes = Array.isArray(d.activity_types) ? d.activity_types : [];
 
     // Title / subtitle / author from the preset top-level fields
     if (d.title)    document.getElementById('title').value    = d.title;
@@ -495,6 +497,8 @@ async function runCover() {
   fd.append('tagline',    subPageCount(document.getElementById('tagline').value));
   // Series preset supplies bullets (one per line); manual mode sends none.
   fd.append('bullets',    seriesBullets.join('\n'));
+  // Activity types drive the procedural back-cover blurb (empty in manual mode).
+  fd.append('activity_types', seriesTypes.join(','));
   fd.append('author_bio', document.getElementById('author_bio').value);
   fd.append('cover_mode', mode);
   fd.append('bg_theme',   document.getElementById('bg_theme').value);

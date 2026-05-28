@@ -14,6 +14,24 @@ from jobs import active_jobs, create_job, jdone, jerror, jlog, jobs_lock
 
 bp = Blueprint('cover', __name__)
 
+# Map a preset mix (n_* counts) to the canonical back-cover blurb type ids,
+# ordered to match the "How to Use" / TOC sequence for consistency.
+_MIX_TO_TYPE = {
+    'n_mazes': 'maze', 'n_pattern': 'pattern', 'n_symmetry': 'symmetry',
+    'n_mathmaze': 'math_maze', 'n_pathsum': 'path_sums', 'n_sudoku': 'sudoku',
+    'n_magic': 'magic_square', 'n_counting': 'counting',
+    'n_wordsearch': 'wordsearch', 'n_dotgrid': 'dot_grid',
+}
+_TYPE_ORDER = ['maze', 'pattern', 'symmetry', 'math_maze', 'path_sums',
+               'sudoku', 'magic_square', 'counting', 'wordsearch', 'dot_grid']
+
+
+def _types_from_mix(mix):
+    """Ordered list of activity types actually present in a preset's mix."""
+    present = {_MIX_TO_TYPE[k] for k, v in (mix or {}).items()
+              if k in _MIX_TO_TYPE and v}
+    return [t for t in _TYPE_ORDER if t in present]
+
 
 @bp.route('/cover')
 def cover():
@@ -47,6 +65,9 @@ def cover_run():
     bg_theme   = request.form.get('bg_theme', 'city').strip()
     badge_text = request.form.get('badge_text', '').strip()
     cta_text   = request.form.get('cta_text', '').strip()
+    # Activity types present in the volume (comma-separated) → procedural blurb.
+    activity_types = [t.strip() for t in
+                      request.form.get('activity_types', '').split(',') if t.strip()]
 
     if not title:
         return jsonify({'error': 'Podaj tytuł książki'}), 400
@@ -109,6 +130,7 @@ def cover_run():
                 badge_text=badge_text,
                 cta_text=cta_text,
                 mascot_image_path=mascot_path,
+                activity_types=activity_types,
                 log=lambda m: jlog(jid, m),
             )
 
@@ -167,6 +189,7 @@ def cover_run_series():
                     tagline=c['tagline'], author_bio='', paper='white', seed=seed,
                     cover_mode='kids', bg_theme=c['bg_theme'],
                     badge_text=c['badge_text'], cta_text=c['cta'],
+                    activity_types=_types_from_mix(p.get('mix')),
                     log=lambda m: None,
                 )
                 nf = len(res.get('failed', []))
@@ -208,6 +231,7 @@ def cover_preset_detail(key):
         'subtitle': p.get('subtitle'),
         'author': p.get('author'),
         'cover': p['cover'],
+        'activity_types': _types_from_mix(p.get('mix')),
     })
 
 

@@ -58,6 +58,57 @@ def _draw_star_marker(draw, cx, cy, r, color):
     draw.polygon(pts, fill=color)
 
 
+# Child-friendly action phrase per activity type. Keys are the canonical
+# generator/TOC type ids; aliases below map alternate spellings used elsewhere.
+_BLURB_PHRASES = {
+    "maze":         "mazes",
+    "pattern":      "pattern puzzles",
+    "symmetry":     "mirror drawing",
+    "counting":     "counting games",
+    "wordsearch":   "word searches",
+    "dot_grid":     "dot-to-dot drawing",
+    "math_maze":    "logic paths",
+    "path_sums":    "number trails",
+    "sudoku":       "number puzzles",
+    "magic_square": "number grids",
+}
+_BLURB_ALIASES = {
+    "mazes": "maze", "dotgrid": "dot_grid", "mathmaze": "math_maze",
+    "pathsum": "path_sums", "pathsums": "path_sums", "magic": "magic_square",
+    "magicsquare": "magic_square", "wordsearches": "wordsearch",
+}
+
+
+def _english_list(items: list) -> str:
+    """Natural English list, no Oxford comma: 'A', 'A and B', 'A, B and C'."""
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return f"{items[0]} and {items[1]}"
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def build_blurb(activity_types) -> str:
+    """Deterministic back-cover blurb assembled from the activity types actually
+    present in the volume. No randomness: same input -> same output. Dedupes by
+    phrase (first occurrence wins) and caps at 6 phrases. Empty/None -> a generic
+    fallback with no dangling 'Packed with'."""
+    phrases = []
+    for t in (activity_types or []):
+        key = _BLURB_ALIASES.get(str(t), str(t))
+        phrase = _BLURB_PHRASES.get(key)
+        if phrase and phrase not in phrases:
+            phrases.append(phrase)
+    phrases = phrases[:6]
+    if not phrases:
+        return ("Hours of screen-free puzzle fun — perfect at home, on a "
+                "plane, or anywhere learning happens.")
+    return (f"Packed with {_english_list(phrases)} — perfect for screen-free "
+            f"quiet time at home, on a plane, or anywhere learning happens.")
+
+
 def render_back_cover(
     canvas: Image.Image,
     dim: CoverDimensions,
@@ -69,6 +120,7 @@ def render_back_cover(
     cover_mode: str = "adult",
     badge_text: str = "",
     cta_text: str = "",
+    activity_types: list = None,
 ) -> Image.Image:
     """
     Draw back cover content onto `canvas` (full-bleed canvas).
@@ -232,12 +284,7 @@ def render_back_cover(
             "Develops fine motor coordination",
             "Includes dedication page — perfect gift",
         ]
-        body_txt = (
-            "Take your little explorer on a fun adventure through a busy "
-            "little town! Packed with mazes, coloring, counting puzzles, "
-            "and more — perfect for screen-free quiet time at home, on a "
-            "plane, or anywhere learning happens."
-        )
+        body_txt = build_blurb(activity_types)
         cta_txt = (cta_text or "").strip()
         navy = text_on_light(palette)   # header sits on a white panel — keep dark
         gray = (70, 70, 70)

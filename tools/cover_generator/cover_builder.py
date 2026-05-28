@@ -50,6 +50,7 @@ def build_cover(
     badge_text: str = "",             # e.g. "AGES 3-5"
     cta_text: str = "",               # call-to-action above barcode zone
     mascot_image_path: str = None,    # PIL-loadable sticker for front cover
+    activity_types: list = None,      # types present in the volume -> back blurb
 ) -> dict:
     """
     Build a KDP-compliant full cover PDF.
@@ -132,6 +133,7 @@ def build_cover(
         cover_mode=cover_mode,
         badge_text=badge_text,
         cta_text=cta_text,
+        activity_types=activity_types,
     )
 
     # ── 8. Flatten to RGB ─────────────────────────────────────────────────────
