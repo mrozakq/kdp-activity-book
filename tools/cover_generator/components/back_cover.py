@@ -223,7 +223,10 @@ def render_back_cover(
         inner_h = iy2 - iy1
 
         header_txt = "What's Inside?"
-        panel_bullets = [
+        # Use caller-supplied bullets (e.g. series preset) when present; fall
+        # back to generic kids bullets otherwise. NOTE: body_txt blurb below
+        # stays generic on purpose (known, accepted debt — not series-specific).
+        panel_bullets = [b for b in (bullets or []) if str(b).strip()] or [
             "7 different activity types — never boring",
             "Builds counting & problem-solving skills",
             "Develops fine motor coordination",

@@ -101,6 +101,25 @@ def _text_shadow(draw: ImageDraw.ImageDraw, xy: tuple, text: str,
     draw.text(xy, text, font=font, fill=fill, anchor=anchor)
 
 
+def _luminance601(rgb) -> float:
+    """Perceived luminance (Rec. 601), 0-255 scale."""
+    r, g, b = rgb[0], rgb[1], rgb[2]
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+# Title and subtitle sit on a LIGHT (white) banner. A palette 'text' colour that
+# was designed for a dark background (e.g. space_blue's near-white) would be
+# unreadable here, so fall back to a dark navy regardless of palette. The choice
+# depends on the banner (always light), not on the palette's intended bg.
+_BANNER_DARK_FALLBACK = (30, 40, 70)
+
+
+def _banner_text_color(palette) -> tuple:
+    if _luminance601(palette["text"]) > 140:
+        return _BANNER_DARK_FALLBACK
+    return palette["text"]
+
+
 def _wrap_text(text: str, font, max_width: int) -> list[str]:
     words = text.split()
     lines = []
@@ -276,7 +295,7 @@ def render_front_cover(
     total_title_h = len(title_lines) * title_font_size * 1.15
     title_y_start = title_zone_y1 + (title_zone_h - total_title_h) // 2 + title_font_size // 2
 
-    text_col = palette["text"]
+    text_col = _banner_text_color(palette)
     shadow_col = (0, 0, 0, 80)
     for i, line in enumerate(title_lines):
         ty = int(title_y_start + i * title_font_size * 1.15)
@@ -299,7 +318,7 @@ def render_front_cover(
     for i, line in enumerate(sub_lines):
         sy = int(subtitle_y + i * sub_font_size * 1.3 + sub_font_size * 0.5)
         _text_shadow(draw, (cx, sy), line, sub_font,
-                     fill=palette["text"], shadow_color=shadow_col, offset=2, anchor="mm")
+                     fill=text_col, shadow_color=shadow_col, offset=2, anchor="mm")
 
     # ── Author byline (+ age badge beside it) at the bottom ─────────────────
     author_font_size = int(safe_w * 0.045)
