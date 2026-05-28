@@ -130,6 +130,19 @@ def activity_run():
             res_dir.mkdir(exist_ok=True)
             generated = []
 
+            import json as _json
+
+            def _save_sidecar(out_path, sol, n, title):
+                """Zapisz rozwiązanie obok PNG jako .json. out_path to ścieżka .png."""
+                if sol is None:
+                    return
+                sol = dict(sol)
+                sol['n'] = n              # numer aktywności (np. 'Sudoku 1')
+                sol['title'] = title      # pełny tytuł strony (np. 'Prompt Path 3')
+                side = str(out_path).rsplit('.', 1)[0] + '.json'
+                with open(side, 'w', encoding='utf-8') as f:
+                    _json.dump(sol, f, ensure_ascii=False)
+
             # Spread each kind evenly across the page sequence (Bresenham-style).
             # Each item gets a fractional position (i+0.5)/n; we sort all items
             # by position so kinds interleave even when their counts differ.
@@ -164,35 +177,41 @@ def activity_run():
                 out = res_dir / f'{idx:03d}_{kind}.png'
                 if kind == 'maze':
                     n = payload
-                    img = generate_maze_image(
+                    img, sol = generate_maze_image(
                         difficulty=difficulty,
                         seed=seed_base + n,
                         title=f'Prompt Path {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Prompt Path {n}')
                     jlog(jid, f'   🧩 [{idx:03d}] Maze {n} zapisany')
                 elif kind == 'sudoku':
                     n = payload
-                    img = generate_sudoku_image(
+                    img, sol = generate_sudoku_image(
                         size_key=sudoku_size,
                         difficulty=sudoku_difficulty,
                         seed=seed_base + 2000 + n,
                         title=f'Constraints {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Constraints {n}')
                     jlog(jid, f'   🔢 [{idx:03d}] Sudoku {n} ({sudoku_size}) zapisany')
                 elif kind == 'wordsearch':
                     n = payload
-                    img = generate_wordsearch_image(
+                    img, sol = generate_wordsearch_image(
                         theme=wordsearch_theme,
                         difficulty=wordsearch_difficulty,
                         seed=seed_base + 3000 + n,
                         title=f'Find the Keywords {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Find the Keywords {n}')
                     jlog(jid, f'   📝 [{idx:03d}] WordSearch {n} ({wordsearch_theme}) zapisany')
                 elif kind == 'tictactoe':
                     n = payload
@@ -205,13 +224,15 @@ def activity_run():
                     jlog(jid, f'   ⭕ [{idx:03d}] Tic-Tac-Toe {n} ({tictactoe_difficulty}) zapisany')
                 elif kind == 'magic':
                     n = payload
-                    img = generate_magic_square_image(
+                    img, sol = generate_magic_square_image(
                         difficulty=magic_difficulty,
                         seed=seed_base + 4000 + n,
                         title=f'Balance the Grid {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Balance the Grid {n}')
                     jlog(jid, f'   ✨ [{idx:03d}] Magic Square {n} ({magic_difficulty}) zapisany')
                 elif kind == 'dotgrid':
                     n = payload
@@ -225,23 +246,27 @@ def activity_run():
                     jlog(jid, f'   • [{idx:03d}] Dot Grid {n} ({dotgrid_difficulty}) zapisany')
                 elif kind == 'counting':
                     n = payload
-                    img = generate_counting_image(
+                    img, sol = generate_counting_image(
                         difficulty=counting_difficulty,
                         seed=seed_base + 5000 + n,
                         title=f'Count the Tokens {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Count the Tokens {n}')
                     jlog(jid, f'   🔢 [{idx:03d}] Counting {n} ({counting_difficulty}) zapisany')
                 elif kind == 'pattern':
                     n = payload
-                    img = generate_pattern_image(
+                    img, sol = generate_pattern_image(
                         difficulty=pattern_difficulty,
                         seed=seed_base + 6000 + n,
                         title=f'Loop It {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Loop It {n}')
                     jlog(jid, f'   🔁 [{idx:03d}] Pattern {n} ({pattern_difficulty}) zapisany')
                 elif kind == 'symmetry':
                     n = payload
@@ -265,23 +290,27 @@ def activity_run():
                     jlog(jid, f'   🎨 [{idx:03d}] Color by Number {n} ({cbn_difficulty}) zapisany')
                 elif kind == 'pathsum':
                     n = payload
-                    img = generate_path_sums_image(
+                    img, sol = generate_path_sums_image(
                         difficulty=pathsum_difficulty,
                         seed=seed_base + 9000 + n,
                         title=f'Accumulator {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Accumulator {n}')
                     jlog(jid, f'   ➕ [{idx:03d}] Path Sum {n} ({pathsum_difficulty}) zapisany')
                 elif kind == 'mathmaze':
                     n = payload
-                    img = generate_math_maze_image(
+                    img, sol = generate_math_maze_image(
                         difficulty=mathmaze_difficulty,
                         seed=seed_base + 10000 + n,
                         title=f'Decision Tree {n}',
                         canvas_size=canvas,
+                        return_solution=True,
                     )
                     img.save(str(out), dpi=(KDP_DPI, KDP_DPI))
+                    _save_sidecar(out, sol, n, f'Decision Tree {n}')
                     jlog(jid, f'   ➗ [{idx:03d}] Math Maze {n} ({mathmaze_difficulty}) zapisany')
                 generated.append(str(out))
 

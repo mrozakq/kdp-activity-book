@@ -418,6 +418,141 @@ def render_great_job_page() -> Image.Image:
     return img
 
 
+# --- answer key (Etap 2B) ---------------------------------------------
+
+# Types whose solution we can render in this turn. Hard types (maze, pathsum,
+# mathmaze, wordsearch) need path/circle overlays — they arrive in 2B-2 and are
+# simply skipped here (their sidecar JSON is still written by phase 1).
+_KEY_RENDERABLE = {'counting', 'pattern', 'sudoku', 'magic'}
+
+
+def _load_solutions(pages):
+    """Dla listy ścieżek PNG zwróć listę solution-dictów (z tych, które mają .json).
+    Zachowuje kolejność stron. Pomija strony bez sidecar."""
+    import json
+    sols = []
+    for p in pages:
+        side = str(p).rsplit('.', 1)[0] + '.json'
+        if os.path.exists(side):
+            try:
+                with open(side, encoding='utf-8') as f:
+                    sols.append(json.load(f))
+            except Exception:
+                pass
+    return sols
+
+
+def _draw_mini_grid(draw, grid, left, top, cell, font, line_w=4):
+    """Draw a filled N×M grid with digits centred in each cell."""
+    n_rows = len(grid)
+    n_cols = len(grid[0])
+    for i in range(n_rows + 1):
+        y = top + i * cell
+        draw.line([(left, y), (left + n_cols * cell, y)], fill='black', width=line_w)
+    for j in range(n_cols + 1):
+        x = left + j * cell
+        draw.line([(x, top), (x, top + n_rows * cell)], fill='black', width=line_w)
+    for r in range(n_rows):
+        for c in range(n_cols):
+            draw.text((left + c * cell + cell // 2, top + r * cell + cell // 2),
+                      str(grid[r][c]), anchor='mm', fill='black', font=font)
+
+
+def render_answer_key_pages(solutions):
+    """Return a list of CONTENT-sized 'Answers' pages for the renderable types
+    (counting, pattern, sudoku, magic). Overflows onto extra pages as needed.
+    Hard types are skipped this turn."""
+    order_idx = {k: i for i, k in enumerate(TOC_ORDER)}
+    items = [s for s in solutions if s.get('type') in _KEY_RENDERABLE]
+    items.sort(key=lambda s: (order_idx.get(s.get('type'), 99), s.get('n', 0)))
+    if not items:
+        return []
+
+    title_font = get_title_font(150)
+    head_font  = get_body_font(80)
+    label_font = get_body_font(60)
+    cap_font   = get_body_font(48)
+    grid_font  = get_body_font(46)
+
+    margin = 150
+    bottom = CONTENT_H - 160
+
+    pages = []
+    state = {}
+
+    def start_page(first):
+        img = _content_page()
+        d = ImageDraw.Draw(img)
+        if first:
+            d.text((CONTENT_W // 2, 200), 'Answers',
+                   anchor='mt', fill='black', font=title_font)
+            state['y'] = 470
+        else:
+            d.text((CONTENT_W // 2, 170), 'Answers (continued)',
+                   anchor='mt', fill='black', font=head_font)
+            state['y'] = 360
+        state['img'] = img
+        state['draw'] = d
+
+    def ensure(h):
+        if state['y'] + h > bottom:
+            pages.append(state['img'])
+            start_page(False)
+
+    start_page(True)
+
+    from itertools import groupby
+    for t, grp in groupby(items, key=lambda s: s['type']):
+        grp = list(grp)
+        if t == 'counting':
+            for s in grp:
+                ensure(80)
+                state['draw'].text(
+                    (margin, state['y']),
+                    f"{s.get('title')}: {s['data'].get('count')}",
+                    anchor='lt', fill='black', font=label_font)
+                state['y'] += 80
+        elif t == 'pattern':
+            for s in grp:
+                line = f"{s.get('title')}: " + ', '.join(s['data'].get('answers', []))
+                lines = _wrap(line, label_font, CONTENT_W - 2 * margin, state['draw'])
+                ensure(len(lines) * 72 + 16)
+                for ln in lines:
+                    state['draw'].text((margin, state['y']), ln,
+                                       anchor='lt', fill='black', font=label_font)
+                    state['y'] += 72
+                state['y'] += 16
+        else:  # sudoku / magic — pack grids 3 per row
+            cols = 3
+            col_w = (CONTENT_W - 2 * margin) // cols
+            for i in range(0, len(grp), cols):
+                row = grp[i:i + cols]
+                cells, row_h = [], 0
+                for s in row:
+                    grid = s['data']['solved'] if t == 'sudoku' else s['data']['full']
+                    gsize = len(grid)
+                    cell = min((col_w - 40) // gsize, 70)
+                    cells.append((grid, cell))
+                    row_h = max(row_h, 60 + gsize * cell + 50)
+                ensure(row_h)
+                ytop = state['y']
+                for j, s in enumerate(row):
+                    grid, cell = cells[j]
+                    x = margin + j * col_w
+                    if t == 'sudoku':
+                        cap = s.get('title')
+                    else:
+                        cap = f"{s.get('title')} (= {s['data'].get('magic_sum')})"
+                    state['draw'].text((x, ytop), cap, anchor='lt',
+                                       fill='black', font=cap_font)
+                    _draw_mini_grid(state['draw'], grid, x, ytop + 60,
+                                    cell, grid_font)
+                state['y'] = ytop + row_h
+
+    pages.append(state['img'])
+    return pages
+
+
 # --- TOC computation (sorted by first-appearance page) ----------------
 
 def _compute_toc(activity_entries):
@@ -515,6 +650,15 @@ def build_activity_book(pages: List[str], metadata: dict,
         (toc_p,   _roman(2)),   # 'ii'
     ]
     all_pages.extend(activity_entries)
+
+    # Answer key (solutions collected from sidecar JSON next to the PNGs).
+    solutions = _load_solutions(pages)
+    if solutions:
+        key_imgs = render_answer_key_pages(solutions)
+        for i, kimg in enumerate(key_imgs):
+            kp = save_tmp(f'90_answers_{i:02d}', kimg)
+            all_pages.append((kp, None))   # klucz: strony nienumerowane (jak oprawa)
+
     all_pages.append((great_p, None))
 
     # No blank padding — the caller supplies enough activities. Guarantee an
