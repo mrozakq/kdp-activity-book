@@ -127,6 +127,26 @@ def cover_run():
     return jsonify({'job_id': jid})
 
 
+@bp.route('/cover/preset/<key>', methods=['GET'])
+def cover_preset_detail(key):
+    """Return the cover block of a series preset (plus identifying fields) for
+    UI auto-fill. Analogous to /activity/preset/<key>."""
+    from tools.activity_bot.series_presets import get_preset
+    p = get_preset(key)
+    if not p:
+        return jsonify({'error': f'Unknown preset: {key}'}), 404
+    if 'cover' not in p:
+        return jsonify({'error': f'Preset has no cover block: {key}'}), 404
+    return jsonify({
+        'key': key,
+        'volume': p.get('volume'),
+        'title': p.get('title'),
+        'subtitle': p.get('subtitle'),
+        'author': p.get('author'),
+        'cover': p['cover'],
+    })
+
+
 @bp.route('/cover/preview/<jid>')
 def cover_preview(jid):
     """Return the PNG preview as base64 for inline display."""

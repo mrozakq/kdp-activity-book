@@ -75,6 +75,21 @@ PRESETS = {
             'wordsearch': "Every great answer starts with the right word. "
                           "Find them all.",
         },
+        'cover': {
+            'pages': 50,
+            'palette': 'rainbow_pop',
+            'bg_theme': 'generic_stars',
+            'badge_text': 'AGES 5-6',
+            'hook': 'Think Before You Prompt!',
+            'bullets': [
+                '40 screen-free logic puzzles',
+                'Mazes, patterns and counting fun',
+                'Builds focus, precision and patience',
+                'No apps — just a pencil and 60 minutes',
+            ],
+            'cta': 'Start the adventure inside!',
+            'tagline': '50 pages · 8.5 × 11 inches',
+        },
     },
 
     'vibe_v2_prompting_power': {
@@ -134,6 +149,21 @@ PRESETS = {
             'symmetry':   "A function flips. A function repeats. A function "
                           "transforms. Try one.",
         },
+        'cover': {
+            'pages': 58,
+            'palette': 'city_bright',
+            'bg_theme': 'city',
+            'badge_text': 'AGES 5-7',
+            'hook': 'Ask the Right Questions!',
+            'bullets': [
+                '48 logic puzzles for curious kids',
+                'Learn to give clear directions',
+                'Find keywords and spot patterns',
+                'Pre-AI thinking, one page at a time',
+            ],
+            'cta': 'Build your prompting power!',
+            'tagline': '58 pages · 8.5 × 11 inches',
+        },
     },
 
     'vibe_v3_loops_and_logic': {
@@ -191,6 +221,21 @@ PRESETS = {
             'counting':   "Tokens are how AI counts language. Counting things "
                           "is the first step.",
             'wordsearch': "Find the words a programmer uses every day.",
+        },
+        'cover': {
+            'pages': 64,
+            'palette': 'space_blue',
+            'bg_theme': 'space',
+            'badge_text': 'AGES 6-7',
+            'hook': 'If This, Then That!',
+            'bullets': [
+                '52 if/then logic puzzles',
+                'Loops, decision trees and accumulators',
+                'Think in rules like a coder',
+                'A first-grade STEM workout',
+            ],
+            'cta': 'Blast off into logic!',
+            'tagline': '64 pages · 8.5 × 11 inches',
         },
     },
 
@@ -250,6 +295,21 @@ PRESETS = {
             'pattern':    "Hard patterns hide deeper rules. Find them.",
             'wordsearch': "Words about rules. Find them all.",
             'maze':       "One path is correct. The rest are traps.",
+        },
+        'cover': {
+            'pages': 72,
+            'palette': 'jungle_green',
+            'bg_theme': 'jungle',
+            'badge_text': 'AGES 6-7',
+            'hook': 'Solve the Hard Rules!',
+            'bullets': [
+                '60 constraint puzzles',
+                'Sudoku, magic squares and path sums',
+                'Hold many rules in your head at once',
+                'A real critical-thinking challenge',
+            ],
+            'cta': 'Crack every constraint!',
+            'tagline': '72 pages · 8.5 × 11 inches',
         },
     },
 
@@ -312,6 +372,21 @@ PRESETS = {
             'wordsearch': "All the words you've learned. Find them. You're "
                           "ready.",
             'dotgrid':    "Draw what you've imagined. The output is yours.",
+        },
+        'cover': {
+            'pages': 80,
+            'palette': 'unicorn_pink',
+            'bg_theme': 'ocean',
+            'badge_text': 'AGES 6-7',
+            'hook': 'Become an AI Director!',
+            'bullets': [
+                '68 puzzles across 10 thinking patterns',
+                'The complete logic workout',
+                'From prompting to algorithms',
+                'The grand finale of the series',
+            ],
+            'cta': "Prove you're ready!",
+            'tagline': '80 pages · 8.5 × 11 inches',
         },
     },
 }
