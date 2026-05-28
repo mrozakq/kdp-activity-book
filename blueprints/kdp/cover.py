@@ -127,6 +127,70 @@ def cover_run():
     return jsonify({'job_id': jid})
 
 
+@bp.route('/cover/run_series', methods=['POST'])
+def cover_run_series():
+    """Build all 5 Little Vibe Coders covers in one job and zip the PDFs.
+    Each cover uses its preset's cover block (kids mode); spine follows the
+    exact interior page count baked into the preset."""
+    import zipfile
+
+    seed = int(request.form.get('seed', 42))
+    jid = create_job()
+
+    def run():
+        try:
+            import sys as _sys
+            cover_dir = str(COVER_DIR)
+            if cover_dir not in _sys.path:
+                _sys.path.insert(0, cover_dir)
+            from cover_builder import build_cover
+            from tools.activity_bot.series_presets import (
+                list_preset_keys, get_preset)
+
+            out_dir = RESULTS_DIR / jid
+            out_dir.mkdir(parents=True, exist_ok=True)
+            pdfs, total_fail = [], 0
+
+            for key in list_preset_keys():
+                p = get_preset(key)
+                c = p.get('cover')
+                if not c:
+                    jlog(jid, f'⚠️  {key}: brak bloku cover — pomijam')
+                    continue
+                jlog(jid, f'📕 Vol.{p["volume"]} — {key} ({c["pages"]} stron)...')
+                out_pdf = out_dir / f'vol{p["volume"]}_{key}_cover.pdf'
+                res = build_cover(
+                    title=p['title'], subtitle=p['subtitle'], author=p['author'],
+                    description_bullets=c.get('bullets', []),
+                    page_count=c['pages'], output_pdf=str(out_pdf),
+                    palette_name=c['palette'], hook=c['hook'],
+                    tagline=c['tagline'], author_bio='', paper='white', seed=seed,
+                    cover_mode='kids', bg_theme=c['bg_theme'],
+                    badge_text=c['badge_text'], cta_text=c['cta'],
+                    log=lambda m: None,
+                )
+                nf = len(res.get('failed', []))
+                total_fail += nf
+                jlog(jid, f'   {"✅" if nf == 0 else "⚠️  " + str(nf) + " fail"} '
+                          f'Vol.{p["volume"]} gotowy')
+                pdfs.append(str(out_pdf))
+
+            zip_path = RESULTS_DIR / f'{jid}_covers.zip'
+            with zipfile.ZipFile(str(zip_path), 'w', zipfile.ZIP_DEFLATED) as zf:
+                for pf in pdfs:
+                    zf.write(pf, os.path.basename(pf))
+            jlog(jid, f'📦 Spakowano {len(pdfs)} okładek do ZIP '
+                      f'(walidacja: {total_fail} fail łącznie)')
+            jdone(jid, str(zip_path), len(pdfs))
+        except Exception as e:
+            import traceback
+            jlog(jid, traceback.format_exc())
+            jerror(jid, str(e))
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({'job_id': jid})
+
+
 @bp.route('/cover/preset/<key>', methods=['GET'])
 def cover_preset_detail(key):
     """Return the cover block of a series preset (plus identifying fields) for

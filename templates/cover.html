@@ -35,6 +35,10 @@
         <option value="vibe_v5_ai_director">Vol.5 — AI Director</option>
       </select>
       <div id="series_cover_info" class="text-xs text-slate-400 mt-2 hidden"></div>
+      <button id="batch-btn" onclick="runSeriesBatch()"
+              class="btn-primary w-full mt-3 text-sm">
+        📦 Generuj wszystkie 5 okładek (ZIP)
+      </button>
     </div>
 
     <!-- Book-type preset (FIRST field — auto-fills the copy below) -->
@@ -418,6 +422,46 @@ function updateMode() {
 
 updateMode();
 applyPreset();   // default = Kids Activity Book (3-5) → fresh-load safe copy
+
+async function runSeriesBatch() {
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('batch-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generuję 5 okładek...';
+  hideEl('results-section');
+  hideEl('preview-wrap');
+  document.getElementById('terminal').textContent = '';
+  setHTML('status-badge', '<span class="badge badge-running">⏳ 5 okładek</span>');
+  showEl('status-badge');
+
+  const fd = new FormData();
+  fd.append('seed', document.getElementById('seed').value || '42');
+  const res = await fetch('/kdp/cover/run_series', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.error) {
+    errEl.textContent = data.error; errEl.classList.remove('hidden');
+    resetBatchBtn(); return;
+  }
+  currentJobId = data.job_id;
+  startLog(data.job_id, 'terminal', () => {
+    resetBatchBtn();
+    fetch('/job/' + currentJobId).then(r => r.json()).then(d => {
+      if (d.status === 'done') {
+        setHTML('status-badge', '<span class="badge badge-done">✅ 5 okładek (ZIP)</span>');
+        showEl('results-section');   // download serves the ZIP; no single preview
+      } else {
+        setHTML('status-badge', '<span class="badge badge-error">❌ Błąd</span>');
+      }
+    });
+  });
+}
+
+function resetBatchBtn() {
+  const btn = document.getElementById('batch-btn');
+  btn.disabled = false;
+  btn.innerHTML = '📦 Generuj wszystkie 5 okładek (ZIP)';
+}
 
 async function runCover() {
   const errEl = document.getElementById('error-msg');
