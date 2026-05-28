@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from cover_config import CoverDimensions
-from components.art import PALETTES
+from components.art import PALETTES, text_on_light
 
 FONTS_DIR = Path(__file__).parent.parent / "assets" / "fonts"
 COLORING_FONTS_DIR = (
@@ -101,23 +101,11 @@ def _text_shadow(draw: ImageDraw.ImageDraw, xy: tuple, text: str,
     draw.text(xy, text, font=font, fill=fill, anchor=anchor)
 
 
-def _luminance601(rgb) -> float:
-    """Perceived luminance (Rec. 601), 0-255 scale."""
-    r, g, b = rgb[0], rgb[1], rgb[2]
-    return 0.299 * r + 0.587 * g + 0.114 * b
-
-
-# Title and subtitle sit on a LIGHT (white) banner. A palette 'text' colour that
-# was designed for a dark background (e.g. space_blue's near-white) would be
-# unreadable here, so fall back to a dark navy regardless of palette. The choice
-# depends on the banner (always light), not on the palette's intended bg.
-_BANNER_DARK_FALLBACK = (30, 40, 70)
-
-
+# Title and subtitle sit on a LIGHT (white) banner — delegate to the shared
+# contrast helper so a palette with a light 'text' falls back to dark navy.
+# Thin wrapper kept for the existing call site and the contrast guard test.
 def _banner_text_color(palette) -> tuple:
-    if _luminance601(palette["text"]) > 140:
-        return _BANNER_DARK_FALLBACK
-    return palette["text"]
+    return text_on_light(palette)
 
 
 def _wrap_text(text: str, font, max_width: int) -> list[str]:
@@ -371,7 +359,7 @@ def render_front_cover(
         draw.rounded_rectangle([pill_x1, pill_y1, pill_x2, pill_y2],
                                radius=pill_h // 2, fill=(255, 255, 255, 255))
         draw.text(((pill_x1 + pill_x2) // 2, cy), atxt, font=author_font,
-                  fill=palette["text"], anchor="mm")
+                  fill=text_on_light(palette), anchor="mm")
 
         # Badge text shrunk to fit inside the star.
         fs = int(badge_r * 0.50)

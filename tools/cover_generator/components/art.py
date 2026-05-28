@@ -109,6 +109,31 @@ def palettes_by_category(category: str) -> list:
     return [name for name, p in PALETTES.items() if p.get("category") == category]
 
 
+# Shared contrast helper — used by front_cover (title/subtitle/author) and
+# back_cover (panel header). A palette 'text' colour designed for a dark
+# background (high luminance, e.g. space_blue's near-white) would be unreadable
+# on a light/white surface, so swap in a dark navy fallback in that case.
+_LIGHT_TEXT_THRESHOLD = 140        # luminance (0-255) above which 'text' is "light"
+_DARK_TEXT_FALLBACK = (30, 40, 70)
+
+
+def _luminance601(rgb) -> float:
+    """Perceived luminance (Rec. 601), 0-255 scale."""
+    return 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
+
+
+def text_on_light(palette_or_rgb) -> tuple:
+    """Return a text colour guaranteed readable on a LIGHT/white surface.
+
+    Accepts a palette dict (uses its 'text') or an RGB tuple. Returns a dark
+    navy fallback when the colour is light, otherwise the colour unchanged.
+    """
+    col = palette_or_rgb["text"] if isinstance(palette_or_rgb, dict) else palette_or_rgb
+    if _luminance601(col) > _LIGHT_TEXT_THRESHOLD:
+        return _DARK_TEXT_FALLBACK
+    return tuple(col)
+
+
 def _gradient_bg(size: tuple, top: tuple, bottom: tuple) -> Image.Image:
     """Vertical linear gradient."""
     w, h = size

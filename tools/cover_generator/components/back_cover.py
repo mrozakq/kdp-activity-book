@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from cover_config import CoverDimensions
-from components.art import PALETTES
+from components.art import PALETTES, text_on_light
 from components.front_cover import (
     _load_font, _text_shadow, _wrap_text,
     TITLE_FONT_CANDIDATES, SUBTITLE_FONT_CANDIDATES, BODY_FONT_CANDIDATES,
@@ -239,7 +239,7 @@ def render_back_cover(
             "plane, or anywhere learning happens."
         )
         cta_txt = (cta_text or "").strip()
-        navy = palette["text"]
+        navy = text_on_light(palette)   # header sits on a white panel — keep dark
         gray = (70, 70, 70)
         star_col = palette["spine"]
 

@@ -1,9 +1,15 @@
-"""Guard: the front-cover title must stay legible on the light title banner.
+"""Guard: every cover text drawn on a light/white surface must stay legible.
 
-The banner is white at ~35% alpha; pessimistically we treat it as a light
-(240,240,240) surface. The final title colour (after front_cover's
-_banner_text_color fallback) must clear WCAG AA contrast (>= 4.5) against it.
-Catches a future palette that ships a light 'text' colour without a fallback.
+Covers (kids covers) draw these texts on light backgrounds:
+  - title + subtitle  → on the semi-transparent white title banner
+  - "What's Inside?"  → on the opaque white marketing panel (back cover)
+  - author byline     → on the opaque white pill (front cover)
+
+Each final colour (after the shared text_on_light / _banner_text_color
+fallback) must clear WCAG AA contrast (>= 4.5) against a pessimistic light
+surface. This catches a future palette that ships a light 'text' colour for
+ANY of these roles, not just the title (the earlier title-only guard missed
+the header and author cases on space_blue).
 """
 import os
 import sys
@@ -15,14 +21,23 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'cover_generator'))
 
 from components.front_cover import _banner_text_color   # noqa: E402
-from components.art import PALETTES                      # noqa: E402
+from components.art import PALETTES, text_on_light       # noqa: E402
 
 KIDS_PALETTES = ['rainbow_pop', 'city_bright', 'space_blue',
                  'jungle_green', 'unicorn_pink']
 
-# Pessimistic light approximation of the (255,255,255, alpha=90) banner.
-BANNER = (240, 240, 240)
+# Pessimistic light surface: darker than opaque white (255) and matches the
+# composited (255,255,255, alpha=90) banner — one value for every role.
+LIGHT_BG = (240, 240, 240)
 AA_NORMAL = 4.5
+
+# role -> function producing the final drawn colour for that text
+ROLE_COLOR = {
+    'title':    lambda p: _banner_text_color(p),
+    'subtitle': lambda p: _banner_text_color(p),
+    'header':   lambda p: text_on_light(p),   # "What's Inside?" on white panel
+    'author':   lambda p: text_on_light(p),   # byline on white pill
+}
 
 
 def _rel_lum(rgb):
@@ -39,9 +54,10 @@ def _contrast(c1, c2):
 
 
 @pytest.mark.parametrize('name', KIDS_PALETTES)
-def test_title_contrast_on_light_banner(name):
-    title_col = _banner_text_color(PALETTES[name])
-    ratio = _contrast(title_col, BANNER)
+@pytest.mark.parametrize('role', sorted(ROLE_COLOR))
+def test_text_contrast_on_light(role, name):
+    col = ROLE_COLOR[role](PALETTES[name])
+    ratio = _contrast(col, LIGHT_BG)
     assert ratio >= AA_NORMAL, (
-        f'{name}: title {title_col} contrast {ratio:.2f} < {AA_NORMAL} '
-        f'on banner {BANNER}')
+        f'{name}/{role}: colour {col} contrast {ratio:.2f} < {AA_NORMAL} '
+        f'on light surface {LIGHT_BG}')
